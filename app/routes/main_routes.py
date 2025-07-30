@@ -1,10 +1,75 @@
 # app/routes/main_routes.py
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
+from app.models import db, Conta, Lancamento
+from datetime import datetime, date
+from calendar import monthrange
+from sqlalchemy import func
 
 # A forma mais simples de criar um Blueprint, sem caminhos.
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def home():
-    return render_template('home.html')
+    # Obter mês/ano da query string ou usar o atual
+    mes = request.args.get('mes', type=int, default=date.today().month)
+    ano = request.args.get('ano', type=int, default=date.today().year)
+    
+    # Calcular primeiro e último dia do mês
+    primeiro_dia = date(ano, mes, 1)
+    ultimo_dia = date(ano, mes, monthrange(ano, mes)[1])
+    
+    # Buscar saldos das contas
+    contas_corrente = Conta.query.filter_by(tipo_conta='Corrente').all()
+    contas_investimento = Conta.query.filter_by(tipo_conta='Investimento').all()
+    
+    # Calcular totais
+    total_corrente = sum(conta.saldo_inicial for conta in contas_corrente)
+    total_investimento = sum(conta.saldo_inicial for conta in contas_investimento)
+    
+    # Buscar lançamentos do mês
+    receitas = Lancamento.query.filter(
+        Lancamento.tipo == 'receita',
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia
+    ).order_by(Lancamento.data_vencimento).all()
+    
+    despesas = Lancamento.query.filter(
+        Lancamento.tipo == 'despesa',
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia
+    ).order_by(Lancamento.data_vencimento).all()
+    
+    # Calcular totais de receitas e despesas
+    total_receitas = sum(lancamento.valor for lancamento in receitas)
+    total_despesas = sum(lancamento.valor for lancamento in despesas)
+    
+    # Criar lista de meses para o seletor
+    meses = [
+        {'numero': 1, 'nome': 'Janeiro'},
+        {'numero': 2, 'nome': 'Fevereiro'},
+        {'numero': 3, 'nome': 'Março'},
+        {'numero': 4, 'nome': 'Abril'},
+        {'numero': 5, 'nome': 'Maio'},
+        {'numero': 6, 'nome': 'Junho'},
+        {'numero': 7, 'nome': 'Julho'},
+        {'numero': 8, 'nome': 'Agosto'},
+        {'numero': 9, 'nome': 'Setembro'},
+        {'numero': 10, 'nome': 'Outubro'},
+        {'numero': 11, 'nome': 'Novembro'},
+        {'numero': 12, 'nome': 'Dezembro'}
+    ]
+    
+    return render_template('home.html',
+                         contas_corrente=contas_corrente,
+                         contas_investimento=contas_investimento,
+                         total_corrente=total_corrente,
+                         total_investimento=total_investimento,
+                         receitas=receitas,
+                         despesas=despesas,
+                         total_receitas=total_receitas,
+                         total_despesas=total_despesas,
+                         mes_selecionado=mes,
+                         ano_selecionado=ano,
+                         meses=meses,
+                         today=date.today())

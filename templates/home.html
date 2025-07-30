@@ -1,11 +1,419 @@
 {% extends "base.html" %}
 
-{% block title %}Página Inicial - Minhas Finanças{% endblock %}
+{% block title %}Dashboard - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="welcome-section">
-    <h1>Bem-vindo ao Sistema Minhas Finanças!</h1>
-    <p>Gerencie suas finanças pessoais de forma simples e eficiente.</p>
-    <p>Use o menu de navegação para acessar suas contas, categorias e lançamentos.</p>
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Seletor de Período -->
+<div class="periodo-selector">
+    <h1>Visão Geral Financeira</h1>
+    <form method="GET" action="{{ url_for('main.home') }}" class="form-periodo">
+        <select name="mes" id="mes" onchange="this.form.submit()">
+            {% for mes_item in meses %}
+                <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                    {{ mes_item.nome }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="ano" id="ano" onchange="this.form.submit()">
+            {% for ano in range(2020, 2030) %}
+                <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+            {% endfor %}
+        </select>
+    </form>
 </div>
+
+<!-- Cards de Saldos -->
+<div class="cards-container">
+    <!-- Cards de Contas Correntes -->
+    <div class="cards-grupo">
+        <h3>Contas Correntes</h3>
+        <div class="cards-row">
+            {% for conta in contas_corrente %}
+                <div class="card-conta">
+                    <div class="card-header">
+                        <span class="material-symbols-outlined">account_balance</span>
+                        <h4>{{ conta.nome }}</h4>
+                    </div>
+                    <div class="card-value">R$ {{ conta.saldo_inicial|moeda }}</div>
+                </div>
+            {% endfor %}
+            <div class="card-total card-corrente">
+                <div class="card-header">
+                    <span class="material-symbols-outlined">account_balance_wallet</span>
+                    <h4>Total Corrente</h4>
+                </div>
+                <div class="card-value">R$ {{ total_corrente|moeda }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cards de Contas Investimento -->
+    {% if contas_investimento %}
+        <div class="cards-grupo">
+            <h3>Contas Investimento</h3>
+            <div class="cards-row">
+                {% for conta in contas_investimento %}
+                    <div class="card-conta">
+                        <div class="card-header">
+                            <span class="material-symbols-outlined">trending_up</span>
+                            <h4>{{ conta.nome }}</h4>
+                        </div>
+                        <div class="card-value">R$ {{ conta.saldo_inicial|moeda }}</div>
+                    </div>
+                {% endfor %}
+                <div class="card-total card-investimento">
+                    <div class="card-header">
+                        <span class="material-symbols-outlined">savings</span>
+                        <h4>Total Investimento</h4>
+                    </div>
+                    <div class="card-value">R$ {{ total_investimento|moeda }}</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Tabelas de Receitas e Despesas -->
+<div class="tabelas-container">
+    <!-- Tabela de Receitas -->
+    <div class="tabela-section">
+        <div class="tabela-header">
+            <h3>
+                <span class="material-symbols-outlined">trending_up</span>
+                Receitas
+            </h3>
+            <div class="total-badge receita">R$ {{ total_receitas|moeda }}</div>
+        </div>
+        {% if receitas %}
+            <div class="table-wrapper">
+                <table class="tabela-lancamentos">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lancamento in receitas %}
+                            <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
+                                <td class="col-status">
+                                    <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
+                                            onclick="togglePagamento({{ lancamento.id }})"
+                                            title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como recebido' }}">
+                                        <span class="material-symbols-outlined">
+                                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                        </span>
+                                    </button>
+                                </td>
+                                <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ lancamento.descricao }}
+                                    {% if lancamento.tag %}
+                                        <span class="tag-mini">{{ lancamento.tag }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                        {{ lancamento.categoria.nome }}
+                                    </span>
+                                </td>
+                                <td class="col-valor receita">R$ {{ lancamento.valor|moeda }}</td>
+                                <td class="col-acoes">
+                                    <button class="btn-icon-mini btn-edit" 
+                                            onclick="editarLancamento({{ lancamento.id }})"
+                                            title="Editar">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button class="btn-icon-mini btn-delete" 
+                                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                            title="Excluir">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-table">
+                <span class="material-symbols-outlined">inbox</span>
+                <p>Nenhuma receita neste período</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Tabela de Despesas -->
+    <div class="tabela-section">
+        <div class="tabela-header">
+            <h3>
+                <span class="material-symbols-outlined">trending_down</span>
+                Despesas
+            </h3>
+            <div class="total-badge despesa">R$ {{ total_despesas|moeda }}</div>
+        </div>
+        {% if despesas %}
+            <div class="table-wrapper">
+                <table class="tabela-lancamentos">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lancamento in despesas %}
+                            <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
+                                <td class="col-status">
+                                    <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
+                                            onclick="togglePagamento({{ lancamento.id }})"
+                                            title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como pago' }}">
+                                        <span class="material-symbols-outlined">
+                                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                        </span>
+                                    </button>
+                                </td>
+                                <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ lancamento.descricao }}
+                                    {% if lancamento.tag %}
+                                        <span class="tag-mini">{{ lancamento.tag }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                        {{ lancamento.categoria.nome }}
+                                    </span>
+                                </td>
+                                <td class="col-valor despesa">R$ {{ lancamento.valor|moeda }}</td>
+                                <td class="col-acoes">
+                                    <button class="btn-icon-mini btn-edit" 
+                                            onclick="editarLancamento({{ lancamento.id }})"
+                                            title="Editar">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button class="btn-icon-mini btn-delete" 
+                                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                            title="Excluir">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-table">
+                <span class="material-symbols-outlined">inbox</span>
+                <p>Nenhuma despesa neste período</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resumo Executivo -->
+<div class="resumo-executivo">
+    <h3>Resumo do Mês</h3>
+    <div class="resumo-cards">
+        <div class="resumo-card">
+            <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
+            <div>
+                <span class="resumo-label">Total de Receitas</span>
+                <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
+            </div>
+        </div>
+        <div class="resumo-card">
+            <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
+            <div>
+                <span class="resumo-label">Total de Despesas</span>
+                <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
+            </div>
+        </div>
+        <div class="resumo-card {{ 'positivo' if (total_receitas - total_despesas) >= 0 else 'negativo' }}">
+            <span class="material-symbols-outlined">
+                {{ 'account_balance' if (total_receitas - total_despesas) >= 0 else 'error' }}
+            </span>
+            <div>
+                <span class="resumo-label">Resultado do Mês</span>
+                <span class="resumo-value">R$ {{ (total_receitas - total_despesas)|moeda }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forms ocultos -->
+<form id="formPagamento" method="POST" style="display: none;">
+    <input type="hidden" name="from_home" value="true">
+    <input type="hidden" name="mes" value="{{ mes_selecionado }}">
+    <input type="hidden" name="ano" value="{{ ano_selecionado }}">
+</form>
+
+<form id="formExclusao" method="POST" style="display: none;">
+    <input type="hidden" name="excluir_todos" id="excluir_todos" value="false">
+    <input type="hidden" name="from_home" value="true">
+    <input type="hidden" name="mes" value="{{ mes_selecionado }}">
+    <input type="hidden" name="ano" value="{{ ano_selecionado }}">
+</form>
+
+<!-- Modal de Exclusão -->
+<div id="modalExclusao" class="home-modal">
+    <div class="home-modal-content">
+        <div class="home-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="home-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="home-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message">
+                Tem certeza que deseja excluir o lançamento <strong id="descricaoExcluir"></strong>?
+            </p>
+            
+            <div id="opcaoRecorrencia" style="display: none;">
+                <p class="delete-submessage">Este é um lançamento recorrente. O que deseja fazer?</p>
+                <div class="delete-options">
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="apenas_este" checked>
+                        <span>Excluir apenas este lançamento</span>
+                    </label>
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="todos_futuros">
+                        <span>Excluir este e todos os futuros</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="home-modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                <span class="material-symbols-outlined">close</span>
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmarExclusaoFinal()">
+                <span class="material-symbols-outlined">delete</span>
+                Confirmar Exclusão
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição -->
+<div id="modalEdicao" class="home-modal">
+    <div class="home-modal-content">
+        <div class="home-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Lançamento
+            </h3>
+            <span class="home-modal-close" onclick="fecharModalEdicao()">&times;</span>
+        </div>
+        <form id="formEdicao" method="POST">
+            <input type="hidden" name="from_home" value="true">
+            <input type="hidden" name="mes" value="{{ mes_selecionado }}">
+            <input type="hidden" name="ano" value="{{ ano_selecionado }}">
+            <input type="hidden" name="editar_todos" id="editar_todos" value="false">
+            
+            <div class="home-modal-body">
+                <div class="form-group">
+                    <label for="edit_descricao">Descrição</label>
+                    <input type="text" id="edit_descricao" name="descricao" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_valor">Valor (R$)</label>
+                    <input type="text" id="edit_valor" name="valor" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_data">Data de Vencimento</label>
+                    <input type="date" id="edit_data" name="data_vencimento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_conta">Conta</label>
+                    <select id="edit_conta" name="conta_id" required>
+                        {% for conta in contas_corrente %}
+                            <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_categoria">Categoria</label>
+                    <select id="edit_categoria" name="categoria_id" required>
+                        <!-- Preenchido dinamicamente -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_subcategoria">Subcategoria</label>
+                    <select id="edit_subcategoria" name="subcategoria_id">
+                        <option value="">Nenhuma</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_tag">Tag</label>
+                    <input type="text" id="edit_tag" name="tag" maxlength="50">
+                </div>
+                
+                <div id="opcaoEdicaoRecorrencia" style="display: none;">
+                    <p class="edit-submessage">Este é um lançamento recorrente. Deseja editar:</p>
+                    <div class="edit-options">
+                        <label class="edit-option">
+                            <input type="radio" name="editar_opcao" value="apenas_este" checked>
+                            <span>Apenas este lançamento</span>
+                        </label>
+                        <label class="edit-option">
+                            <input type="radio" name="editar_opcao" value="todos_futuros">
+                            <span>Este e todos os futuros</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="home-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 {% endblock %}

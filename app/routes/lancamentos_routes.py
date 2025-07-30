@@ -385,12 +385,121 @@ def excluir_lancamento(id):
         
         db.session.commit()
         
+        # Redirecionar para home se vier de lá
+        if request.form.get('from_home') == 'true':
+            mes = request.form.get('mes', date.today().month)
+            ano = request.form.get('ano', date.today().year)
+            return redirect(url_for('main.home', mes=mes, ano=ano))
+        
     except Exception as e:
         db.session.rollback()
         print(f"Erro ao excluir lançamento: {e}")
         flash('Erro ao excluir lançamento.', 'error')
     
     return redirect(url_for('lancamentos.listar_lancamentos'))
+
+@lancamentos_bp.route('/lancamentos/<int:id>/pagar', methods=['POST'])
+def marcar_como_pago(id):
+    """Marcar lançamento como pago/pendente"""
+    try:
+        lancamento = Lancamento.query.get_or_404(id)
+        
+        if lancamento.status == 'pago':
+            # Desmarcar como pago
+            lancamento.status = 'pendente'
+            lancamento.data_pagamento = None
+            flash('Lançamento marcado como pendente!', 'info')
+        else:
+            # Marcar como pago
+            lancamento.status = 'pago'
+            lancamento.data_pagamento = date.today()
+            flash('Lançamento marcado como pago!', 'success')
+        
+        db.session.commit()
+        
+        # Redirecionar para home se vier de lá
+        if request.form.get('from_home') == 'true':
+            mes = request.form.get('mes', date.today().month)
+            ano = request.form.get('ano', date.today().year)
+            return redirect(url_for('main.home', mes=mes, ano=ano))
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao atualizar status: {e}")
+        flash('Erro ao atualizar status do lançamento.', 'error')
+    
+    return redirect(url_for('lancamentos.listar_lancamentos'))
+
+@lancamentos_bp.route('/lancamentos/<int:id>/editar', methods=['GET', 'POST'])
+def editar_lancamento(id):
+    """Editar lançamento"""
+    lancamento = Lancamento.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        try:
+            # Atualizar dados
+            lancamento.descricao = request.form.get('descricao')
+            lancamento.valor = Decimal(request.form.get('valor', '0'))
+            lancamento.conta_id = int(request.form.get('conta_id'))
+            lancamento.categoria_id = int(request.form.get('categoria_id'))
+            subcategoria_id = request.form.get('subcategoria_id')
+            lancamento.subcategoria_id = int(subcategoria_id) if subcategoria_id else None
+            lancamento.data_vencimento = datetime.strptime(request.form.get('data_vencimento'), '%Y-%m-%d').date()
+            lancamento.tag = request.form.get('tag', '').strip() or None
+            
+            # Se marcar para editar todos os futuros
+            editar_todos = request.form.get('editar_todos') == 'true'
+            
+            if editar_todos and lancamento.recorrencia != 'unica':
+                # Buscar lançamentos futuros relacionados
+                if lancamento.lancamento_pai_id:
+                    lancamentos_editar = Lancamento.query.filter(
+                        Lancamento.lancamento_pai_id == lancamento.lancamento_pai_id,
+                        Lancamento.data_vencimento >= lancamento.data_vencimento
+                    ).all()
+                else:
+                    lancamentos_editar = Lancamento.query.filter(
+                        Lancamento.lancamento_pai_id == lancamento.id,
+                        Lancamento.data_vencimento >= lancamento.data_vencimento
+                    ).all()
+                
+                # Atualizar todos
+                for lanc in lancamentos_editar:
+                    lanc.valor = lancamento.valor
+                    lanc.conta_id = lancamento.conta_id
+                    lanc.categoria_id = lancamento.categoria_id
+                    lanc.subcategoria_id = lancamento.subcategoria_id
+                    lanc.tag = lancamento.tag
+            
+            db.session.commit()
+            flash('Lançamento atualizado com sucesso!', 'success')
+            
+            # Redirecionar para home se vier de lá
+            if request.form.get('from_home') == 'true':
+                mes = request.form.get('mes', date.today().month)
+                ano = request.form.get('ano', date.today().year)
+                return redirect(url_for('main.home', mes=mes, ano=ano))
+            
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao editar lançamento: {e}")
+            flash('Erro ao atualizar lançamento.', 'error')
+    
+    # GET - Retornar dados em JSON para o modal
+    return jsonify({
+        'id': lancamento.id,
+        'descricao': lancamento.descricao,
+        'valor': str(lancamento.valor),
+        'tipo': lancamento.tipo,
+        'conta_id': lancamento.conta_id,
+        'categoria_id': lancamento.categoria_id,
+        'subcategoria_id': lancamento.subcategoria_id,
+        'data_vencimento': lancamento.data_vencimento.strftime('%Y-%m-%d'),
+        'tag': lancamento.tag or '',
+        'recorrencia': lancamento.recorrencia
+    })
 
 # API para buscar subcategorias
 @lancamentos_bp.route('/api/categorias/<int:categoria_id>/subcategorias')
