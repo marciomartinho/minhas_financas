@@ -17,6 +17,7 @@ class Conta(db.Model):
     # Usaremos 'Corrente' ou 'Investimento' aqui
     tipo_conta = db.Column(db.String(50), nullable=False) 
     saldo_inicial = db.Column(db.Numeric(10, 2), nullable=False, default=0.0)
+    saldo_atual = db.Column(db.Numeric(10, 2), nullable=False, default=0.0)
     # Não guardamos a imagem, mas sim o nome do arquivo dela.
     imagem_arquivo = db.Column(db.String(255), nullable=True) 
 

@@ -21,71 +21,68 @@
 <!-- Seletor de Período -->
 <div class="periodo-selector">
     <h1>Visão Geral Financeira</h1>
-    <form method="GET" action="{{ url_for('main.home') }}" class="form-periodo">
-        <select name="mes" id="mes" onchange="this.form.submit()">
-            {% for mes_item in meses %}
-                <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
-                    {{ mes_item.nome }}
-                </option>
-            {% endfor %}
-        </select>
-        <select name="ano" id="ano" onchange="this.form.submit()">
-            {% for ano in range(2020, 2030) %}
-                <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
-            {% endfor %}
-        </select>
-    </form>
+    <div class="periodo-controls">
+        <form method="GET" action="{{ url_for('main.home') }}" class="form-periodo">
+            <select name="mes" id="mes" onchange="this.form.submit()">
+                {% for mes_item in meses %}
+                    <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                        {{ mes_item.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            <select name="ano" id="ano" onchange="this.form.submit()">
+                {% for ano in range(2020, 2030) %}
+                    <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{{ url_for('main.home') }}" class="btn-hoje" title="Ir para o mês atual">
+            <span class="material-symbols-outlined">today</span>
+            <span>Hoje</span>
+        </a>
+    </div>
 </div>
 
 <!-- Cards de Saldos -->
 <div class="cards-container">
-    <!-- Cards de Contas Correntes -->
-    <div class="cards-grupo">
-        <h3>Contas Correntes</h3>
-        <div class="cards-row">
-            {% for conta in contas_corrente %}
-                <div class="card-conta">
-                    <div class="card-header">
-                        <span class="material-symbols-outlined">account_balance</span>
-                        <h4>{{ conta.nome }}</h4>
-                    </div>
-                    <div class="card-value">R$ {{ conta.saldo_inicial|moeda }}</div>
-                </div>
-            {% endfor %}
-            <div class="card-total card-corrente">
+    <div class="cards-row-unified">
+        <!-- Cards de Contas Correntes -->
+        {% for conta in contas_corrente %}
+            <div class="card-conta">
                 <div class="card-header">
-                    <span class="material-symbols-outlined">account_balance_wallet</span>
-                    <h4>Total Corrente</h4>
-                </div>
-                <div class="card-value">R$ {{ total_corrente|moeda }}</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Cards de Contas Investimento -->
-    {% if contas_investimento %}
-        <div class="cards-grupo">
-            <h3>Contas Investimento</h3>
-            <div class="cards-row">
-                {% for conta in contas_investimento %}
-                    <div class="card-conta">
-                        <div class="card-header">
-                            <span class="material-symbols-outlined">trending_up</span>
-                            <h4>{{ conta.nome }}</h4>
+                    {% if conta.imagem_arquivo %}
+                        <div class="card-icon-custom">
+                            <img src="{{ url_for('static', filename='uploads/' + conta.imagem_arquivo) }}" alt="{{ conta.nome }}">
                         </div>
-                        <div class="card-value">R$ {{ conta.saldo_inicial|moeda }}</div>
-                    </div>
-                {% endfor %}
-                <div class="card-total card-investimento">
-                    <div class="card-header">
-                        <span class="material-symbols-outlined">savings</span>
-                        <h4>Total Investimento</h4>
-                    </div>
-                    <div class="card-value">R$ {{ total_investimento|moeda }}</div>
+                    {% else %}
+                        <span class="material-symbols-outlined">account_balance</span>
+                    {% endif %}
+                    <h4>{{ conta.nome }}</h4>
                 </div>
+                <div class="card-value">R$ {{ conta.saldo_atual|moeda }}</div>
             </div>
+        {% endfor %}
+        
+        <!-- Card Total Corrente -->
+        <div class="card-total card-corrente">
+            <div class="card-header">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                <h4>Total das Contas Correntes</h4>
+            </div>
+            <div class="card-value">R$ {{ total_corrente|moeda }}</div>
         </div>
-    {% endif %}
+        
+        <!-- Card Total Investimento -->
+        {% if total_investimento > 0 %}
+            <div class="card-total card-investimento">
+                <div class="card-header">
+                    <span class="material-symbols-outlined">savings</span>
+                    <h4>Total Investimento</h4>
+                </div>
+                <div class="card-value">R$ {{ total_investimento|moeda }}</div>
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Tabelas de Receitas e Despesas -->

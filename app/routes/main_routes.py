@@ -23,9 +23,9 @@ def home():
     contas_corrente = Conta.query.filter_by(tipo_conta='Corrente').all()
     contas_investimento = Conta.query.filter_by(tipo_conta='Investimento').all()
     
-    # Calcular totais
-    total_corrente = sum(conta.saldo_inicial for conta in contas_corrente)
-    total_investimento = sum(conta.saldo_inicial for conta in contas_investimento)
+    # Calcular totais usando saldo_atual (sempre recalcular para pegar mudanças)
+    total_corrente = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Corrente').scalar() or 0
+    total_investimento = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Investimento').scalar() or 0
     
     # Buscar lançamentos do mês
     receitas = Lancamento.query.filter(

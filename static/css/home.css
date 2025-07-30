@@ -45,6 +45,12 @@
     color: #2c3e50;
 }
 
+.periodo-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 .form-periodo {
     display: flex;
     gap: 10px;
@@ -70,25 +76,39 @@
     box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
+.btn-hoje {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.btn-hoje:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-hoje .material-symbols-outlined {
+    font-size: 20px;
+}
+
 /* --- Cards Container --- */
 .cards-container {
     margin-bottom: 30px;
 }
 
-.cards-grupo {
-    margin-bottom: 25px;
-}
-
-.cards-grupo h3 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.cards-row {
+.cards-row-unified {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
 }
 
@@ -109,13 +129,28 @@
 .card-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 15px;
 }
 
 .card-header .material-symbols-outlined {
     font-size: 28px;
     color: #6c757d;
+}
+
+.card-icon-custom {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.card-icon-custom img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .card-header h4 {
@@ -133,20 +168,39 @@
 
 /* --- Cards de Total --- */
 .card-total {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.card-corrente {
-    border-color: #28a745;
+.card-total::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.card-corrente::before {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+}
+
+.card-investimento::before {
+    background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+}
+
+.card-total:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
 }
 
 .card-corrente .card-header .material-symbols-outlined {
     color: #28a745;
-}
-
-.card-investimento {
-    border-color: #007bff;
 }
 
 .card-investimento .card-header .material-symbols-outlined {
@@ -240,7 +294,13 @@
 }
 
 .tabela-lancamentos tbody tr.row-pago {
-    opacity: 0.7;
+    background-color: #d4edda;
+    opacity: 0.85;
+}
+
+.tabela-lancamentos tbody tr.row-pago:hover {
+    background-color: #c3e6cb;
+    opacity: 0.9;
 }
 
 .tabela-lancamentos td {
@@ -290,11 +350,11 @@
 }
 
 .status-pendente {
-    color: #6c757d;
+    color: #dc3545;
 }
 
 .status-pendente:hover {
-    background-color: #6c757d10;
+    background-color: #dc354510;
 }
 
 .status-pago {
@@ -303,6 +363,21 @@
 
 .status-pago:hover {
     background-color: #28a74510;
+}
+
+/* --- Indicador visual de pago/recebido --- */
+.tabela-lancamentos tbody tr.row-pago td {
+    position: relative;
+}
+
+.tabela-lancamentos tbody tr.row-pago td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #28a745;
 }
 
 /* --- Tags e Categorias --- */
@@ -679,6 +754,10 @@
     .tabelas-container {
         grid-template-columns: 1fr;
     }
+    
+    .cards-row-unified {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
 }
 
 @media (max-width: 768px) {
@@ -687,11 +766,16 @@
         gap: 20px;
     }
     
+    .periodo-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .periodo-selector h1 {
         font-size: 24px;
     }
     
-    .cards-row {
+    .cards-row-unified {
         grid-template-columns: 1fr;
     }
     
@@ -711,5 +795,13 @@
     .home-modal-content {
         margin: 10% auto;
         width: 95%;
+    }
+    
+    .btn-hoje span:not(.material-symbols-outlined) {
+        display: none;
+    }
+    
+    .btn-hoje {
+        padding: 10px 15px;
     }
 }

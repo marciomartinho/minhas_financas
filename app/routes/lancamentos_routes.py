@@ -349,6 +349,14 @@ def excluir_lancamento(id):
     try:
         lancamento = Lancamento.query.get_or_404(id)
         
+        # Se o lançamento estava pago, reverter o saldo antes de excluir
+        if lancamento.status == 'pago':
+            conta = lancamento.conta
+            if lancamento.tipo == 'receita':
+                conta.saldo_atual -= lancamento.valor
+            else:  # despesa
+                conta.saldo_atual += lancamento.valor
+        
         # Se for um lançamento pai com recorrência, perguntar se quer excluir todos
         excluir_todos = request.form.get('excluir_todos') == 'true'
         
@@ -374,7 +382,14 @@ def excluir_lancamento(id):
                     )
                 ).all()
             
+            # Reverter saldo de todos os lançamentos pagos que serão excluídos
             for lanc in lancamentos_excluir:
+                if lanc.status == 'pago' and lanc.id != lancamento.id:  # Já revertemos o principal
+                    conta = lanc.conta
+                    if lanc.tipo == 'receita':
+                        conta.saldo_atual -= lanc.valor
+                    else:  # despesa
+                        conta.saldo_atual += lanc.valor
                 db.session.delete(lanc)
                 
             flash(f'{len(lancamentos_excluir)} lançamentos excluídos com sucesso!', 'success')
@@ -400,19 +415,34 @@ def excluir_lancamento(id):
 
 @lancamentos_bp.route('/lancamentos/<int:id>/pagar', methods=['POST'])
 def marcar_como_pago(id):
-    """Marcar lançamento como pago/pendente"""
+    """Marcar lançamento como pago/pendente e atualizar saldo da conta"""
     try:
         lancamento = Lancamento.query.get_or_404(id)
+        conta = lancamento.conta
         
         if lancamento.status == 'pago':
-            # Desmarcar como pago
+            # Desmarcar como pago - reverter o saldo
             lancamento.status = 'pendente'
             lancamento.data_pagamento = None
+            
+            # Reverter o saldo
+            if lancamento.tipo == 'receita':
+                conta.saldo_atual -= lancamento.valor
+            else:  # despesa
+                conta.saldo_atual += lancamento.valor
+                
             flash('Lançamento marcado como pendente!', 'info')
         else:
-            # Marcar como pago
+            # Marcar como pago - atualizar o saldo
             lancamento.status = 'pago'
             lancamento.data_pagamento = date.today()
+            
+            # Atualizar o saldo
+            if lancamento.tipo == 'receita':
+                conta.saldo_atual += lancamento.valor
+            else:  # despesa
+                conta.saldo_atual -= lancamento.valor
+                
             flash('Lançamento marcado como pago!', 'success')
         
         db.session.commit()
@@ -437,6 +467,20 @@ def editar_lancamento(id):
     
     if request.method == 'POST':
         try:
+            # Se o lançamento está pago e o valor mudou, ajustar o saldo
+            if lancamento.status == 'pago':
+                valor_antigo = lancamento.valor
+                valor_novo = Decimal(request.form.get('valor', '0'))
+                
+                if valor_antigo != valor_novo:
+                    conta = lancamento.conta
+                    diferenca = valor_novo - valor_antigo
+                    
+                    if lancamento.tipo == 'receita':
+                        conta.saldo_atual += diferenca
+                    else:  # despesa
+                        conta.saldo_atual -= diferenca
+            
             # Atualizar dados
             lancamento.descricao = request.form.get('descricao')
             lancamento.valor = Decimal(request.form.get('valor', '0'))
