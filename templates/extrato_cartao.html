@@ -8,6 +8,17 @@
 {% endblock %}
 
 {% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
 <!-- Seletor de Cartão e Período -->
 <div class="cartao-selector">
     <div class="cartao-selector-header">
@@ -70,6 +81,21 @@
             <div class="fatura-valor">R$ {{ total_fatura|moeda }}</div>
             {% if data_vencimento %}
                 <div class="fatura-vencimento">Vencimento: {{ data_vencimento.strftime('%d/%m/%Y') }}</div>
+            {% endif %}
+            
+            <!-- Botão para pagar fatura -->
+            {% if total_fatura > 0 and not fatura_paga %}
+                <button class="btn btn-primary btn-pagar-fatura" 
+                        onclick="confirmarPagamentoFatura({{ cartao_selecionado.id }}, '{{ cartao_selecionado.nome }}', {{ total_fatura }}, {{ mes_selecionado }}, {{ ano_selecionado }}, '{{ cartao_selecionado.conta.nome }}')"
+                        style="margin-top: 15px;">
+                    <span class="material-symbols-outlined">payment</span>
+                    Pagar Fatura
+                </button>
+            {% elif fatura_paga %}
+                <div class="fatura-paga-badge" style="margin-top: 15px;">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Fatura Paga
+                </div>
             {% endif %}
         </div>
     </div>
@@ -163,6 +189,59 @@
         <p>Selecione um cartão para visualizar o extrato</p>
     </div>
 {% endif %}
+
+<!-- Modal de Confirmação de Pagamento de Fatura -->
+<div id="modalPagamentoFatura" class="home-modal">
+    <div class="home-modal-content">
+        <div class="home-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">payment</span>
+                Confirmar Pagamento de Fatura
+            </h3>
+            <span class="home-modal-close" onclick="fecharModalPagamento()">&times;</span>
+        </div>
+        <div class="home-modal-body">
+            <p class="pagamento-message">
+                Confirma o pagamento da fatura do <strong id="nomeCartaoPagar"></strong>?
+            </p>
+            <div class="fatura-detalhes">
+                <div class="detalhe-pagamento">
+                    <span class="label">Valor da Fatura:</span>
+                    <span class="valor" id="valorFaturaPagar"></span>
+                </div>
+                <div class="detalhe-pagamento">
+                    <span class="label">Conta para Débito:</span>
+                    <span class="valor" id="contaDebito"></span>
+                </div>
+                <div class="detalhe-pagamento">
+                    <span class="label">Referência:</span>
+                    <span class="valor" id="referenciaFatura"></span>
+                </div>
+            </div>
+            <p class="aviso-pagamento">
+                <span class="material-symbols-outlined">info</span>
+                O valor será debitado da conta vinculada ao cartão.
+            </p>
+        </div>
+        <form id="formPagamentoFatura" method="POST" action="/lancamentos/pagar-fatura">
+            <input type="hidden" name="cartao_id" id="pagamento_cartao_id">
+            <input type="hidden" name="valor_fatura" id="pagamento_valor_fatura">
+            <input type="hidden" name="mes" id="pagamento_mes">
+            <input type="hidden" name="ano" id="pagamento_ano">
+            
+            <div class="home-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalPagamento()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">check</span>
+                    Confirmar Pagamento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Modal de Exclusão -->
 <div id="modalExclusao" class="home-modal">

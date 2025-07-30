@@ -1,7 +1,7 @@
 # app/routes/main_routes.py
 
 from flask import Blueprint, render_template, request
-from app.models import db, Conta, Lancamento, Cartao
+from app.models import db, Conta, Lancamento, Cartao, Categoria
 from datetime import datetime, date
 from calendar import monthrange
 from sqlalchemy import func, extract, and_
@@ -29,40 +29,18 @@ def home():
     total_investimento = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Investimento').scalar() or 0
     
     # Buscar lançamentos do mês
-    # Para receitas: incluir receitas normais e transferências de entrada
+    # Para receitas: apenas tipo = 'receita'
     receitas = Lancamento.query.filter(
-        db.or_(
-            db.and_(
-                Lancamento.tipo == 'receita',
-                Lancamento.data_vencimento >= primeiro_dia,
-                Lancamento.data_vencimento <= ultimo_dia
-            ),
-            db.and_(
-                Lancamento.tipo == 'transferencia',
-                Lancamento.conta_destino_id.isnot(None),  # Transferências de entrada têm conta_destino_id
-                Lancamento.conta_destino_id < Lancamento.conta_id,  # Para evitar duplicatas
-                Lancamento.data_vencimento >= primeiro_dia,
-                Lancamento.data_vencimento <= ultimo_dia
-            )
-        )
+        Lancamento.tipo == 'receita',
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia
     ).order_by(Lancamento.data_vencimento).all()
     
-    # Para despesas: incluir despesas normais, transferências de saída e faturas de cartão
+    # Para despesas: apenas tipo = 'despesa'
     despesas_query = Lancamento.query.filter(
-        db.or_(
-            db.and_(
-                Lancamento.tipo == 'despesa',
-                Lancamento.data_vencimento >= primeiro_dia,
-                Lancamento.data_vencimento <= ultimo_dia
-            ),
-            db.and_(
-                Lancamento.tipo == 'transferencia',
-                Lancamento.conta_destino_id.isnot(None),  # Transferências de saída têm conta_destino_id
-                Lancamento.conta_id < Lancamento.conta_destino_id,  # Para evitar duplicatas
-                Lancamento.data_vencimento >= primeiro_dia,
-                Lancamento.data_vencimento <= ultimo_dia
-            )
-        )
+        Lancamento.tipo == 'despesa',
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia
     ).order_by(Lancamento.data_vencimento).all()
     
     # Processar faturas de cartão
@@ -180,6 +158,7 @@ def extrato_cartao():
     despesas = []
     total_fatura = 0
     data_vencimento = None
+    fatura_paga = False
     
     if cartao_id:
         cartao_selecionado = Cartao.query.get(cartao_id)
@@ -203,6 +182,20 @@ def extrato_cartao():
             
             # Calcular total da fatura
             total_fatura = sum(despesa.valor for despesa in despesas)
+            
+            # Verificar se a fatura foi paga
+            primeiro_dia = date(ano, mes, 1)
+            ultimo_dia = date(ano, mes, monthrange(ano, mes)[1])
+            
+            pagamento_fatura = Lancamento.query.filter(
+                Lancamento.tipo == 'despesa',
+                Lancamento.descricao.like(f'%Pagamento Fatura {cartao_selecionado.nome}%'),
+                Lancamento.data_vencimento >= primeiro_dia,
+                Lancamento.data_vencimento <= ultimo_dia
+            ).first()
+            
+            if pagamento_fatura and pagamento_fatura.status == 'pago':
+                fatura_paga = True
     
     # Criar lista de meses para o seletor
     meses = [
@@ -226,6 +219,7 @@ def extrato_cartao():
                          despesas=despesas,
                          total_fatura=total_fatura,
                          data_vencimento=data_vencimento,
+                         fatura_paga=fatura_paga,
                          mes_selecionado=mes,
                          ano_selecionado=ano,
                          meses=meses,

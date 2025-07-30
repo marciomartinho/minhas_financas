@@ -4,6 +4,35 @@
 let lancamentoIdExcluir = null;
 let lancamentoIdEditar = null;
 
+// Função para confirmar pagamento de fatura
+function confirmarPagamentoFatura(cartaoId, cartaoNome, valorFatura, mes, ano, contaNome) {
+    // Preencher informações no modal
+    document.getElementById('nomeCartaoPagar').textContent = cartaoNome;
+    document.getElementById('valorFaturaPagar').textContent = `R$ ${valorFatura.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    
+    // Usar o nome da conta passado como parâmetro
+    document.getElementById('contaDebito').textContent = contaNome;
+    
+    // Referência do mês
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    document.getElementById('referenciaFatura').textContent = `${meses[mes - 1]}/${ano}`;
+    
+    // Preencher campos do formulário
+    document.getElementById('pagamento_cartao_id').value = cartaoId;
+    document.getElementById('pagamento_valor_fatura').value = valorFatura;
+    document.getElementById('pagamento_mes').value = mes;
+    document.getElementById('pagamento_ano').value = ano;
+    
+    // Mostrar modal
+    document.getElementById('modalPagamentoFatura').style.display = 'block';
+}
+
+// Função para fechar modal de pagamento
+function fecharModalPagamento() {
+    document.getElementById('modalPagamentoFatura').style.display = 'none';
+}
+
 // Função para confirmar exclusão
 function confirmarExclusaoCartao(id, descricao, recorrencia) {
     lancamentoIdExcluir = id;
@@ -272,12 +301,16 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function(event) {
         const modalExclusao = document.getElementById('modalExclusao');
         const modalEdicao = document.getElementById('modalEdicao');
+        const modalPagamento = document.getElementById('modalPagamentoFatura');
         
         if (event.target == modalExclusao) {
             modalExclusao.style.display = 'none';
         }
         if (event.target == modalEdicao) {
             modalEdicao.style.display = 'none';
+        }
+        if (event.target == modalPagamento) {
+            modalPagamento.style.display = 'none';
         }
     });
     

@@ -137,6 +137,47 @@
     margin-top: 5px;
 }
 
+/* --- Botão Pagar Fatura --- */
+.btn-pagar-fatura {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-pagar-fatura:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* --- Badge de Fatura Paga --- */
+.fatura-paga-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.fatura-paga-badge .material-symbols-outlined {
+    font-size: 20px;
+}
+
 /* --- Tabela de Despesas --- */
 .despesas-cartao-section {
     background-color: #ffffff;
@@ -161,6 +202,65 @@
     gap: 8px;
 }
 
+/* --- Tabela --- */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabela-lancamentos {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.tabela-lancamentos thead tr {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.tabela-lancamentos th {
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    font-size: 13px;
+}
+
+.tabela-lancamentos tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.tabela-lancamentos tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.tabela-lancamentos td {
+    padding: 12px 10px;
+}
+
+.tabela-lancamentos tfoot tr {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* --- Colunas --- */
+.col-valor {
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.col-valor.despesa {
+    color: #dc3545;
+}
+
+.col-acoes {
+    width: 80px;
+    text-align: center;
+}
+
 /* --- Estado Vazio --- */
 .empty-cartao {
     text-align: center;
@@ -172,6 +272,18 @@
     font-size: 80px;
     color: #dee2e6;
     margin-bottom: 20px;
+}
+
+.empty-table {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-table .material-symbols-outlined {
+    font-size: 48px;
+    color: #dee2e6;
+    margin-bottom: 10px;
 }
 
 /* --- Botão Voltar --- */
@@ -194,7 +306,7 @@
     transform: translateY(-1px);
 }
 
-/* --- Badge para Parcelas --- */
+/* --- Badges --- */
 .badge-parcela {
     font-size: 11px;
     padding: 2px 6px;
@@ -203,6 +315,119 @@
     border-radius: 4px;
     margin-left: 5px;
     font-weight: 600;
+}
+
+.tag-mini {
+    font-size: 11px;
+    padding: 2px 6px;
+    background-color: #6c757d;
+    color: white;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+.categoria-mini {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* --- Botões Mini --- */
+.btn-icon-mini {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 2px;
+}
+
+.btn-icon-mini .material-symbols-outlined {
+    font-size: 16px;
+}
+
+.btn-edit {
+    color: #007bff;
+}
+
+.btn-edit:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-delete {
+    color: #dc3545;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+/* --- Modal de Pagamento de Fatura --- */
+.pagamento-message {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.fatura-detalhes {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.detalhe-pagamento {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detalhe-pagamento:last-child {
+    border-bottom: none;
+}
+
+.detalhe-pagamento .label {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detalhe-pagamento .valor {
+    font-size: 16px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+#valorFaturaPagar {
+    font-size: 20px;
+    color: #dc3545;
+}
+
+.aviso-pagamento {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background-color: #cfe2ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #084298;
+    margin-top: 20px;
+}
+
+.aviso-pagamento .material-symbols-outlined {
+    font-size: 20px;
 }
 
 /* --- Input Month no Modal --- */
@@ -214,6 +439,7 @@ input[type="month"] {
     font-size: 14px;
     transition: border-color 0.3s ease;
     cursor: pointer;
+    width: 100%;
 }
 
 input[type="month"]:focus {
@@ -227,12 +453,37 @@ input[type="month"]::-webkit-calendar-picker-indicator {
     filter: invert(48%) sepia(56%) saturate(1808%) hue-rotate(244deg) brightness(85%) contrast(91%);
 }
 
+/* --- Animações --- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* --- Responsividade --- */
 @media (max-width: 768px) {
+    .cartao-selector {
+        padding: 20px;
+    }
+    
     .cartao-selector-header {
         flex-direction: column;
         gap: 15px;
         align-items: stretch;
+    }
+    
+    .cartao-selector h1 {
+        font-size: 24px;
     }
     
     .selectors-row {
@@ -252,29 +503,47 @@ input[type="month"]::-webkit-calendar-picker-indicator {
         flex-direction: column;
         gap: 20px;
         text-align: center;
+        padding: 20px;
+    }
+    
+    .cartao-details {
+        flex-direction: column;
+        text-align: center;
     }
     
     .fatura-info {
         text-align: center;
-    }
-    
-    .btn-voltar {
         width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .cartao-selector h1 {
-        font-size: 24px;
     }
     
     .fatura-valor {
         font-size: 28px;
     }
     
+    .btn-pagar-fatura {
+        width: 100%;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    .fatura-paga-badge {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .btn-voltar {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .despesas-cartao-section {
-        padding: 15px;
+        padding: 20px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
     }
     
     .tabela-lancamentos {
@@ -284,5 +553,85 @@ input[type="month"]::-webkit-calendar-picker-indicator {
     .tabela-lancamentos th,
     .tabela-lancamentos td {
         padding: 8px 5px;
+    }
+    
+    .fatura-detalhes {
+        padding: 15px;
+    }
+    
+    .detalhe-pagamento {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cartao-selector h1 {
+        font-size: 20px;
+    }
+    
+    .cartao-selector h1 .material-symbols-outlined {
+        font-size: 24px;
+    }
+    
+    .cartao-icon-large {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .cartao-icon-large .material-symbols-outlined {
+        font-size: 28px;
+    }
+    
+    .cartao-nome h2 {
+        font-size: 20px;
+    }
+    
+    .fatura-valor {
+        font-size: 24px;
+    }
+    
+    .despesas-cartao-section {
+        padding: 15px;
+    }
+    
+    .tabela-lancamentos {
+        font-size: 12px;
+    }
+    
+    .btn-icon-mini {
+        padding: 4px;
+    }
+    
+    .btn-icon-mini .material-symbols-outlined {
+        font-size: 14px;
+    }
+    
+    /* Esconder coluna de categoria em telas muito pequenas */
+    .tabela-lancamentos th:nth-child(3),
+    .tabela-lancamentos td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* --- Impressão --- */
+@media print {
+    .cartao-selector-header a,
+    .btn-pagar-fatura,
+    .btn-icon-mini,
+    .col-acoes {
+        display: none !important;
+    }
+    
+    .cartao-selector,
+    .cartao-info-card,
+    .despesas-cartao-section {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .tabela-lancamentos {
+        font-size: 12px;
     }
 }
