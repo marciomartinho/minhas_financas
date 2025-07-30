@@ -14,19 +14,24 @@ function alternarTipoLancamento(tipo) {
         form.action = '/lancamentos/despesa';
     } else if (tipo === 'receita') {
         form.action = '/lancamentos/receita';
+    } else if (tipo === 'cartao') {
+        form.action = '/lancamentos/cartao';
     } else if (tipo === 'transferencia') {
         form.action = '/lancamentos/transferencia';
     }
     
     // Alternar campos visíveis
     const camposTransferencia = document.querySelector('.campos-transferencia');
+    const camposCartao = document.querySelector('.campos-cartao');
     const camposDespesaReceita = document.querySelector('.campos-despesa-receita');
     const labelData = document.getElementById('label_data_vencimento');
+    const campoConta = document.querySelector('.campo-conta');
     
     if (tipo === 'transferencia') {
         // Mostrar campos de transferência
         camposTransferencia.style.display = 'flex';
         camposDespesaReceita.style.display = 'none';
+        camposCartao.style.display = 'none';
         
         // Ajustar label da data
         labelData.textContent = 'Data';
@@ -38,11 +43,40 @@ function alternarTipoLancamento(tipo) {
         // Remover obrigatoriedade dos campos de despesa/receita
         document.getElementById('categoria_id').required = false;
         document.getElementById('conta_id').required = false;
+        document.getElementById('cartao_id').required = false;
+        
+    } else if (tipo === 'cartao') {
+        // Mostrar campos de cartão
+        camposTransferencia.style.display = 'none';
+        camposDespesaReceita.style.display = 'block';
+        camposCartao.style.display = 'block';
+        campoConta.style.display = 'none';
+        
+        // Ajustar label da data
+        labelData.textContent = 'Data da Compra';
+        
+        // Tornar campos de cartão obrigatórios
+        document.getElementById('cartao_id').required = true;
+        document.getElementById('mes_inicial').required = true;
+        document.getElementById('categoria_id').required = true;
+        
+        // Remover obrigatoriedade dos campos não usados
+        document.getElementById('conta_id').required = false;
+        document.getElementById('conta_origem_id').required = false;
+        document.getElementById('conta_destino_id').required = false;
+        
+        // Mostrar apenas categorias de despesa
+        const categoriaDespesa = document.querySelector('.categoria-despesa');
+        const categoriaReceita = document.querySelector('.categoria-receita');
+        categoriaDespesa.style.display = 'block';
+        categoriaReceita.style.display = 'none';
         
     } else {
         // Mostrar campos de despesa/receita
         camposTransferencia.style.display = 'none';
         camposDespesaReceita.style.display = 'block';
+        camposCartao.style.display = 'none';
+        campoConta.style.display = 'block';
         
         // Ajustar label da data
         labelData.textContent = tipo === 'receita' ? 'Data de Recebimento' : 'Vencimento';
@@ -51,9 +85,11 @@ function alternarTipoLancamento(tipo) {
         document.getElementById('categoria_id').required = true;
         document.getElementById('conta_id').required = true;
         
-        // Remover obrigatoriedade dos campos de transferência
+        // Remover obrigatoriedade dos campos de transferência e cartão
         document.getElementById('conta_origem_id').required = false;
         document.getElementById('conta_destino_id').required = false;
+        document.getElementById('cartao_id').required = false;
+        document.getElementById('mes_inicial').required = false;
         
         // Alternar categorias visíveis
         const categoriaDespesa = document.querySelector('.categoria-despesa');
@@ -179,6 +215,30 @@ function toggleParcelas() {
         parcelasGroup.style.display = 'none';
         document.getElementById('num_parcelas').required = false;
         document.getElementById('num_parcelas').value = '';
+    }
+}
+
+// Função para converter input month para o formato esperado pelo backend
+function formatarMesInicial() {
+    const mesInicialInput = document.getElementById('mes_inicial');
+    if (mesInicialInput && mesInicialInput.value) {
+        // O input month retorna YYYY-MM, precisamos converter para YYYY-MM-DD
+        const [ano, mes] = mesInicialInput.value.split('-');
+        const dataFormatada = `${ano}-${mes}-01`;
+        
+        // Criar um input hidden com o valor formatado
+        let hiddenInput = document.getElementById('mes_inicial_formatado');
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = 'mes_inicial_formatado';
+            hiddenInput.name = 'mes_inicial';
+            mesInicialInput.parentNode.appendChild(hiddenInput);
+        }
+        hiddenInput.value = dataFormatada;
+        
+        // Renomear o input month para não ser enviado
+        mesInicialInput.name = 'mes_inicial_display';
     }
 }
 
@@ -387,6 +447,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const formLancamento = document.getElementById('formLancamento');
     if (formLancamento) {
         formLancamento.addEventListener('submit', function(e) {
+            // Formatar mês inicial se for cartão
+            if (tipoAtual === 'cartao') {
+                formatarMesInicial();
+            }
+            
             const valorInput = document.getElementById('valor');
             let valor = valorInput.value;
             
@@ -410,6 +475,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!validarTransferencia()) {
                     e.preventDefault();
                     valorInput.value = valor.replace('.', ',');
+                    return;
+                }
+            } else if (tipoAtual === 'cartao') {
+                const cartaoSelect = document.getElementById('cartao_id');
+                if (!cartaoSelect.value) {
+                    e.preventDefault();
+                    alert('Por favor, selecione um cartão.');
+                    cartaoSelect.focus();
                     return;
                 }
             } else {
@@ -472,6 +545,21 @@ style.textContent = `
     .tipo-transferencia {
         background-color: #17a2b810;
         color: #17a2b8;
+    }
+    
+    /* Estilo para indicador de cartão */
+    .tipo-cartao_credito {
+        background-color: #6f42c110;
+        color: #6f42c1;
+    }
+    
+    /* Estilo para campos de cartão */
+    .campos-cartao {
+        background-color: #f8f4ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #e0d6f0;
     }
 `;
 document.head.appendChild(style);

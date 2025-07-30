@@ -42,8 +42,8 @@
             <span class="tipo-label">Receita</span>
         </label>
         
-        <label class="tipo-option disabled">
-            <input type="radio" name="tipo_lancamento" value="cartao" disabled>
+        <label class="tipo-option">
+            <input type="radio" name="tipo_lancamento" value="cartao">
             <span class="tipo-icon">
                 <span class="material-symbols-outlined">credit_card</span>
             </span>
@@ -102,6 +102,26 @@
             </div>
         </div>
         
+        <!-- Campos de cartão (inicialmente ocultos) -->
+        <div class="campos-cartao" style="display: none;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cartao_id">Cartão</label>
+                    <select id="cartao_id" name="cartao_id">
+                        <option value="">Selecione...</option>
+                        {% for cartao in cartoes %}
+                            <option value="{{ cartao.id }}">{{ cartao.nome }} (Venc: dia {{ cartao.dia_vencimento }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mes_inicial">Mês Inicial no Extrato</label>
+                    <input type="month" id="mes_inicial" name="mes_inicial" value="{{ today.strftime('%Y-%m') }}">
+                </div>
+            </div>
+        </div>
+        
         <!-- Campos de despesa/receita -->
         <div class="campos-despesa-receita">
             <div class="form-row">
@@ -129,7 +149,7 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group campo-conta">
                     <label for="conta_id">Conta</label>
                     <select id="conta_id" name="conta_id" required>
                         <option value="">Selecione...</option>
@@ -191,7 +211,7 @@
                         <th class="col-data">Vencimento</th>
                         <th class="col-descricao">Descrição</th>
                         <th class="col-categoria">Categoria</th>
-                        <th class="col-conta">Conta</th>
+                        <th class="col-conta">Conta/Cartão</th>
                         <th class="col-tag">Tag</th>
                         <th class="col-valor">Valor</th>
                         <th class="col-acoes">Ações</th>
@@ -215,6 +235,8 @@
                                             trending_down
                                         {% elif lancamento.tipo == 'transferencia' %}
                                             swap_horiz
+                                        {% elif lancamento.tipo == 'cartao_credito' %}
+                                            credit_card
                                         {% endif %}
                                     </span>
                                 </span>
@@ -239,6 +261,11 @@
                                     {% else %}
                                         {{ lancamento.conta.nome }} →
                                     {% endif %}
+                                {% elif lancamento.tipo == 'cartao_credito' %}
+                                    <span style="color: #6f42c1;">
+                                        <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">credit_card</span>
+                                        {{ lancamento.cartao.nome }}
+                                    </span>
                                 {% else %}
                                     {{ lancamento.conta.nome }}
                                 {% endif %}

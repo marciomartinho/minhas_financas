@@ -702,3 +702,35 @@
         font-size: 12px;
     }
 }
+
+/* --- Campos de transferência --- */
+.campos-transferencia {
+    background-color: #f0f8ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #b8daff;
+}
+
+.campos-transferencia .form-group select {
+    background-color: #ffffff;
+}
+
+/* --- Campos de cartão --- */
+.campos-cartao {
+    background-color: #f8f4ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e0d6f0;
+}
+
+.campos-cartao .form-group select,
+.campos-cartao .form-group input {
+    background-color: #ffffff;
+}
+
+.campos-cartao label {
+    color: #6f42c1;
+    font-weight: 600;
+}

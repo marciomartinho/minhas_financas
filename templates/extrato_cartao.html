@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Extrato do Cartão - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/extrato_cartao.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Seletor de Cartão e Período -->
+<div class="cartao-selector">
+    <div class="cartao-selector-header">
+        <h1>
+            <span class="material-symbols-outlined">credit_card</span>
+            Extrato do Cartão
+        </h1>
+        <a href="{{ url_for('main.home') }}" class="btn-voltar">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Voltar
+        </a>
+    </div>
+    
+    <div class="selectors-row">
+        <form method="GET" action="{{ url_for('main.extrato_cartao') }}" class="form-extrato">
+            <select name="cartao_id" class="cartao-select" onchange="this.form.submit()">
+                <option value="">Selecione um cartão...</option>
+                {% for cartao in cartoes %}
+                    <option value="{{ cartao.id }}" {% if cartao.id == cartao_selecionado.id %}selected{% endif %}>
+                        {{ cartao.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="mes" onchange="this.form.submit()">
+                {% for mes_item in meses %}
+                    <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                        {{ mes_item.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="ano" onchange="this.form.submit()">
+                {% for ano in range(2020, 2030) %}
+                    <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if cartao_selecionado %}
+    <!-- Informações do Cartão -->
+    <div class="cartao-info-card">
+        <div class="cartao-details">
+            <div class="cartao-icon-large">
+                <span class="material-symbols-outlined">credit_card</span>
+            </div>
+            <div class="cartao-nome">
+                <h2>{{ cartao_selecionado.nome }}</h2>
+                <div class="cartao-banco">
+                    <span class="material-symbols-outlined">account_balance</span>
+                    {{ cartao_selecionado.conta.nome }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="fatura-info">
+            <div class="fatura-label">Total da Fatura</div>
+            <div class="fatura-valor">R$ {{ total_fatura|moeda }}</div>
+            {% if data_vencimento %}
+                <div class="fatura-vencimento">Vencimento: {{ data_vencimento.strftime('%d/%m/%Y') }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Lista de Despesas -->
+    <div class="despesas-cartao-section">
+        <div class="section-header">
+            <h3>
+                <span class="material-symbols-outlined">receipt_long</span>
+                Despesas do Período
+            </h3>
+            <span style="color: #6c757d; font-size: 14px;">
+                {{ despesas|length }} {{ 'item' if despesas|length == 1 else 'itens' }}
+            </span>
+        </div>
+        
+        {% if despesas %}
+            <div class="table-wrapper">
+                <table class="tabela-lancamentos">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for despesa in despesas %}
+                            <tr>
+                                <td>{{ despesa.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ despesa.descricao }}
+                                    {% if despesa.numero_parcela %}
+                                        <span class="badge-parcela">
+                                            {{ despesa.numero_parcela }}/{{ despesa.total_parcelas }}
+                                        </span>
+                                    {% endif %}
+                                    {% if despesa.tag %}
+                                        <span class="tag-mini">{{ despesa.tag }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="categoria-mini" style="color: {{ despesa.categoria.cor }};">
+                                        {{ despesa.categoria.nome }}
+                                    </span>
+                                    {% if despesa.subcategoria %}
+                                        <br>
+                                        <small style="color: #6c757d; margin-left: 10px;">
+                                            {{ despesa.subcategoria.nome }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td class="col-valor despesa">R$ {{ despesa.valor|moeda }}</td>
+                                <td class="col-acoes">
+                                    <button class="btn-icon-mini btn-edit" 
+                                            onclick="editarDespesaCartao({{ despesa.id }})"
+                                            title="Editar">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button class="btn-icon-mini btn-delete" 
+                                            onclick="confirmarExclusaoCartao({{ despesa.id }}, '{{ despesa.descricao }}', '{{ despesa.recorrencia }}')"
+                                            title="Excluir">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #f8f9fa; font-weight: 600;">
+                            <td colspan="3" style="text-align: right; padding: 15px;">Total:</td>
+                            <td class="col-valor despesa" style="font-size: 18px;">R$ {{ total_fatura|moeda }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-table">
+                <span class="material-symbols-outlined">inbox</span>
+                <p>Nenhuma despesa neste período</p>
+            </div>
+        {% endif %}
+    </div>
+{% else %}
+    <!-- Estado vazio -->
+    <div class="empty-cartao">
+        <span class="material-symbols-outlined">credit_card_off</span>
+        <p>Selecione um cartão para visualizar o extrato</p>
+    </div>
+{% endif %}
+
+<!-- Modal de Exclusão -->
+<div id="modalExclusao" class="home-modal">
+    <div class="home-modal-content">
+        <div class="home-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="home-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="home-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message">
+                Tem certeza que deseja excluir a despesa <strong id="descricaoExcluir"></strong>?
+            </p>
+            
+            <div id="opcaoRecorrencia" style="display: none;">
+                <p class="delete-submessage">Esta é uma despesa recorrente. O que deseja fazer?</p>
+                <div class="delete-options">
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="apenas_este" checked>
+                        <span>Excluir apenas esta despesa</span>
+                    </label>
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="todos_futuros">
+                        <span>Excluir esta e todas as futuras</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="home-modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                <span class="material-symbols-outlined">close</span>
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmarExclusaoFinal()">
+                <span class="material-symbols-outlined">delete</span>
+                Confirmar Exclusão
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição -->
+<div id="modalEdicao" class="home-modal">
+    <div class="home-modal-content">
+        <div class="home-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Despesa do Cartão
+            </h3>
+            <span class="home-modal-close" onclick="fecharModalEdicao()">&times;</span>
+        </div>
+        <form id="formEdicao" method="POST">
+            <input type="hidden" name="from_extrato" value="true">
+            <input type="hidden" name="editar_todos" id="editar_todos" value="false">
+            
+            <div class="home-modal-body">
+                <div class="form-group">
+                    <label for="edit_descricao">Descrição</label>
+                    <input type="text" id="edit_descricao" name="descricao" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_valor">Valor (R$)</label>
+                    <input type="text" id="edit_valor" name="valor" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_data">Data da Compra</label>
+                    <input type="date" id="edit_data" name="data_vencimento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_mes_inicial">Mês no Extrato</label>
+                    <input type="month" id="edit_mes_inicial" name="mes_inicial">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_categoria">Categoria</label>
+                    <select id="edit_categoria" name="categoria_id" required>
+                        <!-- Preenchido dinamicamente -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_subcategoria">Subcategoria</label>
+                    <select id="edit_subcategoria" name="subcategoria_id">
+                        <option value="">Nenhuma</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_tag">Tag</label>
+                    <input type="text" id="edit_tag" name="tag" maxlength="50">
+                </div>
+                
+                <div id="opcaoEdicaoRecorrencia" style="display: none;">
+                    <p class="edit-submessage">Esta é uma despesa recorrente. Deseja editar:</p>
+                    <div class="edit-options">
+                        <label class="edit-option">
+                            <input type="radio" name="editar_opcao" value="apenas_este" checked>
+                            <span>Apenas esta despesa</span>
+                        </label>
+                        <label class="edit-option">
+                            <input type="radio" name="editar_opcao" value="todos_futuros">
+                            <span>Esta e todas as futuras</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="home-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form oculto para exclusão -->
+<form id="formExclusao" method="POST" style="display: none;">
+    <input type="hidden" name="excluir_todos" id="excluir_todos" value="false">
+    <input type="hidden" name="from_extrato" value="true">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/extrato_cartao.js') }}"></script>
+{% endblock %}

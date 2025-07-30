@@ -102,6 +102,7 @@ class Lancamento(db.Model):
     total_parcelas = db.Column(db.Integer, nullable=True)
     lancamento_pai_id = db.Column(db.Integer, db.ForeignKey('lancamentos.id'), nullable=True)
     tag = db.Column(db.String(50), nullable=True)  # Campo para tags/etiquetas
+    mes_inicial_cartao = db.Column(db.Date, nullable=True)  # Mês inicial para despesas do cartão
     
     # Relacionamentos
     conta = db.relationship('Conta', foreign_keys=[conta_id], backref='lancamentos')
@@ -115,4 +116,3 @@ class Lancamento(db.Model):
         return f'<Lancamento {self.descricao} - R$ {self.valor}>'
 
 
-# Você pode adicionar outras classes aqui no futuro (Ex: Lancamento, etc.)

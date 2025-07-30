@@ -1,0 +1,288 @@
+/* static/css/extrato_cartao.css */
+
+/* --- Seletor de Cartão --- */
+.cartao-selector {
+    background-color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.cartao-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.cartao-selector h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cartao-selector h1 .material-symbols-outlined {
+    color: #6f42c1;
+}
+
+.selectors-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.form-extrato {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex: 1;
+}
+
+.form-extrato select {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cartao-select {
+    min-width: 200px;
+}
+
+.form-extrato select:hover {
+    border-color: #6f42c1;
+}
+
+.form-extrato select:focus {
+    outline: none;
+    border-color: #6f42c1;
+    box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+}
+
+/* --- Info do Cartão --- */
+.cartao-info-card {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cartao-details {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.cartao-icon-large {
+    width: 60px;
+    height: 60px;
+    background-color: #f8f4ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6f42c1;
+}
+
+.cartao-icon-large .material-symbols-outlined {
+    font-size: 32px;
+}
+
+.cartao-nome h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+.cartao-banco {
+    font-size: 14px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.fatura-info {
+    text-align: right;
+}
+
+.fatura-label {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.fatura-valor {
+    font-size: 32px;
+    font-weight: 700;
+    color: #dc3545;
+}
+
+.fatura-vencimento {
+    font-size: 14px;
+    color: #495057;
+    margin-top: 5px;
+}
+
+/* --- Tabela de Despesas --- */
+.despesas-cartao-section {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Estado Vazio --- */
+.empty-cartao {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-cartao .material-symbols-outlined {
+    font-size: 80px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+/* --- Botão Voltar --- */
+.btn-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-voltar:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* --- Badge para Parcelas --- */
+.badge-parcela {
+    font-size: 11px;
+    padding: 2px 6px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-weight: 600;
+}
+
+/* --- Input Month no Modal --- */
+input[type="month"] {
+    background-color: #ffffff;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    cursor: pointer;
+}
+
+input[type="month"]:focus {
+    outline: none;
+    border-color: #6f42c1;
+    background-color: #ffffff;
+}
+
+input[type="month"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(48%) sepia(56%) saturate(1808%) hue-rotate(244deg) brightness(85%) contrast(91%);
+}
+
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+    .cartao-selector-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .selectors-row {
+        flex-direction: column;
+    }
+    
+    .form-extrato {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-extrato select {
+        width: 100%;
+    }
+    
+    .cartao-info-card {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .fatura-info {
+        text-align: center;
+    }
+    
+    .btn-voltar {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .cartao-selector h1 {
+        font-size: 24px;
+    }
+    
+    .fatura-valor {
+        font-size: 28px;
+    }
+    
+    .despesas-cartao-section {
+        padding: 15px;
+    }
+    
+    .tabela-lancamentos {
+        font-size: 13px;
+    }
+    
+    .tabela-lancamentos th,
+    .tabela-lancamentos td {
+        padding: 8px 5px;
+    }
+}

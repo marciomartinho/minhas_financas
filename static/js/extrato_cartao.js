@@ -1,62 +1,11 @@
-// static/js/home.js
+// static/js/extrato_cartao.js
 
 // Variáveis globais
 let lancamentoIdExcluir = null;
 let lancamentoIdEditar = null;
 
-// Função para alternar status de pagamento
-function togglePagamento(id) {
-    const form = document.getElementById('formPagamento');
-    form.action = `/lancamentos/${id}/pagar`;
-    form.submit();
-}
-
-// Função para marcar fatura como paga
-function marcarFaturaPaga(cartaoId, cartaoNome, valorFatura, dataVencimento) {
-    // Debug - verificar valores
-    console.log('Pagando fatura:', {
-        cartaoId: cartaoId,
-        cartaoNome: cartaoNome,
-        valorFatura: valorFatura,
-        dataVencimento: dataVencimento
-    });
-    
-    // Converter valorFatura para número se vier como string
-    if (typeof valorFatura === 'string') {
-        valorFatura = parseFloat(valorFatura.replace(',', '.'));
-    }
-    
-    if (confirm(`Confirma o pagamento da fatura do ${cartaoNome} no valor de R$ ${valorFatura.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}?`)) {
-        // Criar um form temporário para enviar o pagamento
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/lancamentos/pagar-fatura';
-        
-        // Adicionar campos necessários
-        const campos = {
-            'cartao_id': cartaoId,
-            'valor_fatura': valorFatura.toString().replace(',', '.'),
-            'mes': document.querySelector('select[name="mes"]').value,
-            'ano': document.querySelector('select[name="ano"]').value
-        };
-        
-        console.log('Enviando dados:', campos);
-        
-        for (const [nome, valor] of Object.entries(campos)) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = nome;
-            input.value = valor;
-            form.appendChild(input);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
 // Função para confirmar exclusão
-function confirmarExclusao(id, descricao, recorrencia) {
+function confirmarExclusaoCartao(id, descricao, recorrencia) {
     lancamentoIdExcluir = id;
     document.getElementById('descricaoExcluir').textContent = descricao;
     
@@ -90,13 +39,13 @@ function fecharModalExclusao() {
     lancamentoIdExcluir = null;
 }
 
-// Função para editar lançamento
-async function editarLancamento(id) {
+// Função para editar despesa do cartão
+async function editarDespesaCartao(id) {
     try {
         // Buscar dados do lançamento
         const response = await fetch(`/lancamentos/${id}/editar`);
         if (!response.ok) {
-            throw new Error('Erro ao buscar dados do lançamento');
+            throw new Error('Erro ao buscar dados da despesa');
         }
         const data = await response.json();
         
@@ -106,30 +55,28 @@ async function editarLancamento(id) {
         document.getElementById('edit_descricao').value = data.descricao;
         document.getElementById('edit_valor').value = data.valor.replace('.', ',');
         document.getElementById('edit_data').value = data.data_vencimento;
-        document.getElementById('edit_conta').value = data.conta_id;
         document.getElementById('edit_tag').value = data.tag;
         
-        // Limpar e carregar categorias do tipo correto
+        // Preencher mês inicial
+        if (data.mes_inicial_cartao) {
+            const [ano, mes] = data.mes_inicial_cartao.split('-');
+            document.getElementById('edit_mes_inicial').value = `${ano}-${mes}`;
+        }
+        
+        // Carregar categorias de despesa
         const categoriaSelect = document.getElementById('edit_categoria');
-        categoriaSelect.innerHTML = '<option value="">Carregando categorias...</option>';
+        categoriaSelect.innerHTML = '<option value="">Carregando...</option>';
         
         try {
-            const tipoCategoria = data.tipo === 'despesa' ? 'Despesa' : 'Receita';
-            const respCat = await fetch(`/categorias/api/categorias?tipo=${tipoCategoria}`);
-            
-            if (!respCat.ok) {
-                throw new Error('Erro ao buscar categorias');
-            }
-            
+            const respCat = await fetch('/categorias/api/categorias?tipo=Despesa');
             const categorias = await respCat.json();
             
-            // Preencher select de categorias
             categoriaSelect.innerHTML = '<option value="">Selecione...</option>';
             categorias.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.nome;
-                if (cat.id == data.categoria_id) {  // Usar == ao invés de === para comparar números
+                if (cat.id == data.categoria_id) {
                     option.selected = true;
                 }
                 categoriaSelect.appendChild(option);
@@ -143,8 +90,6 @@ async function editarLancamento(id) {
         } catch (error) {
             console.error('Erro ao carregar categorias:', error);
             categoriaSelect.innerHTML = '<option value="">Erro ao carregar categorias</option>';
-            alert('Erro ao carregar categorias. Por favor, tente novamente.');
-            return;
         }
         
         // Mostrar opções de recorrência se aplicável
@@ -162,8 +107,8 @@ async function editarLancamento(id) {
         document.getElementById('modalEdicao').style.display = 'block';
         
     } catch (error) {
-        console.error('Erro ao carregar lançamento:', error);
-        alert('Erro ao carregar dados do lançamento. Por favor, tente novamente.');
+        console.error('Erro ao carregar despesa:', error);
+        alert('Erro ao carregar dados da despesa. Por favor, tente novamente.');
     }
 }
 
@@ -183,10 +128,8 @@ async function carregarSubcategorias(categoriaId, subcategoriaIdSelecionada = nu
     }
     
     try {
-        // Mostrar loading
         subcategoriaSelect.innerHTML = '<option value="">Carregando...</option>';
         
-        // Fazer requisição
         const response = await fetch(`/categorias/api/categorias/${categoriaId}/subcategorias`);
         if (!response.ok) {
             throw new Error('Erro ao buscar subcategorias');
@@ -194,14 +137,13 @@ async function carregarSubcategorias(categoriaId, subcategoriaIdSelecionada = nu
         
         const subcategorias = await response.json();
         
-        // Limpar e preencher select
         subcategoriaSelect.innerHTML = '<option value="">Nenhuma</option>';
         
         subcategorias.forEach(sub => {
             const option = document.createElement('option');
             option.value = sub.id;
             option.textContent = sub.nome;
-            if (sub.id == subcategoriaIdSelecionada) {  // Usar == ao invés de ===
+            if (sub.id == subcategoriaIdSelecionada) {
                 option.selected = true;
             }
             subcategoriaSelect.appendChild(option);
@@ -213,7 +155,7 @@ async function carregarSubcategorias(categoriaId, subcategoriaIdSelecionada = nu
     }
 }
 
-// DOMContentLoaded - Inicialização
+// DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-hide para mensagens de alerta após 5 segundos
     const alerts = document.querySelectorAll('.alert');
@@ -244,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Event listener para mudança de categoria no modal de edição
+    // Event listener para mudança de categoria no modal
     const categoriaEditSelect = document.getElementById('edit_categoria');
     if (categoriaEditSelect) {
         categoriaEditSelect.addEventListener('change', function() {
@@ -252,10 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Formatar campo de valor no modal de edição
+    // Validação e formatação do campo de valor
     const valorEditInput = document.getElementById('edit_valor');
     if (valorEditInput) {
-        // Permitir apenas números e vírgula
         valorEditInput.addEventListener('keypress', function(e) {
             const char = String.fromCharCode(e.which);
             
@@ -275,7 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         });
         
-        // Formatar ao sair do campo
         valorEditInput.addEventListener('blur', function() {
             if (this.value && this.value.trim() !== '') {
                 const valorOriginal = this.value;
@@ -296,24 +236,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Validação do formulário de edição antes de enviar
+    // Converter month para formato do backend antes de enviar
     const formEdicao = document.getElementById('formEdicao');
     if (formEdicao) {
         formEdicao.addEventListener('submit', function(e) {
+            const mesInicialInput = document.getElementById('edit_mes_inicial');
+            if (mesInicialInput && mesInicialInput.value) {
+                const [ano, mes] = mesInicialInput.value.split('-');
+                const dataFormatada = `${ano}-${mes}-01`;
+                
+                // Criar input hidden com valor formatado
+                let hiddenInput = document.getElementById('mes_inicial_formatado');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.id = 'mes_inicial_formatado';
+                    hiddenInput.name = 'mes_inicial';
+                    mesInicialInput.parentNode.appendChild(hiddenInput);
+                }
+                hiddenInput.value = dataFormatada;
+                
+                // Renomear o input month
+                mesInicialInput.name = 'mes_inicial_display';
+            }
+            
+            // Converter vírgula para ponto no valor
             const valorInput = document.getElementById('edit_valor');
-            let valor = valorInput.value;
-            
-            // Converter vírgula para ponto para o servidor
-            valor = valor.replace(',', '.');
-            valorInput.value = valor;
-            
-            // Validar valor
-            if (!valor || parseFloat(valor) <= 0) {
-                e.preventDefault();
-                alert('Por favor, informe um valor válido maior que zero.');
-                valorInput.value = valor.replace('.', ',');
-                valorInput.focus();
-                return;
+            if (valorInput) {
+                valorInput.value = valorInput.value.replace(',', '.');
             }
         });
     }
@@ -331,15 +281,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Adicionar animação aos cards
-    const cards = document.querySelectorAll('.card-conta, .card-total');
-    cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
+    // Animação para as linhas da tabela
+    const linhasTabela = document.querySelectorAll('.tabela-lancamentos tbody tr');
+    linhasTabela.forEach((linha, index) => {
+        linha.style.opacity = '0';
+        linha.style.transform = 'translateY(20px)';
         setTimeout(() => {
-            card.style.transition = 'all 0.5s ease';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
+            linha.style.transition = 'all 0.3s ease';
+            linha.style.opacity = '1';
+            linha.style.transform = 'translateY(0)';
+        }, index * 50);
     });
 });

@@ -141,17 +141,26 @@
                                     {% endif %}
                                 </td>
                                 <td class="col-valor receita">R$ {{ lancamento.valor|moeda }}</td>
+
                                 <td class="col-acoes">
-                                    <button class="btn-icon-mini btn-edit" 
-                                            onclick="editarLancamento({{ lancamento.id }})"
-                                            title="Editar">
-                                        <span class="material-symbols-outlined">edit</span>
-                                    </button>
-                                    <button class="btn-icon-mini btn-delete" 
-                                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
-                                            title="Excluir">
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </button>
+                                    {% if lancamento.tipo != 'fatura_cartao' %}
+                                        <button class="btn-icon-mini btn-edit" 
+                                                onclick="editarLancamento({{ lancamento.id }})"
+                                                title="Editar">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="btn-icon-mini btn-delete" 
+                                                onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                                title="Excluir">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    {% else %}
+                                        <a href="{{ url_for('main.extrato_cartao', mes=mes_selecionado, ano=ano_selecionado, cartao_id=lancamento.cartao_id) }}" 
+                                           class="btn-icon-mini btn-view" 
+                                           title="Ver extrato">
+                                            <span class="material-symbols-outlined">receipt_long</span>
+                                        </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
