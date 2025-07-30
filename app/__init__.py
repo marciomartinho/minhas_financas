@@ -9,9 +9,9 @@ from .models import db
 
 load_dotenv()
 
-# --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
-# Pega o caminho absoluto para a pasta 'app' onde este arquivo está.
-basedir = os.path.abspath(os.path.dirname(__file__))
+# --- MUDANÇA PRINCIPAL ---
+# Pega o caminho absoluto para a pasta raiz do projeto (um nível acima de 'app')
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 def create_app():
     """
@@ -19,12 +19,13 @@ def create_app():
     """
     app = Flask(
         __name__,
-        # Usamos o caminho absoluto para garantir que o Flask encontre as pastas.
-        template_folder=os.path.join(basedir, 'templates'),
-        static_folder=os.path.join(basedir, 'static')
+        # Aponta para as pastas na raiz do projeto
+        template_folder=os.path.join(project_root, 'templates'),
+        static_folder=os.path.join(project_root, 'static')
     )
 
     # --- CONFIGURAÇÃO ---
+    # Garante que o UPLOAD_FOLDER também use o caminho correto
     app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
     
     db_uri = os.getenv('DATABASE_URI')
@@ -41,9 +42,9 @@ def create_app():
     # --- REGISTRO DOS BLUEPRINTS (ROTAS) ---
     with app.app_context():
         from .routes.main_routes import main_bp
-        app.register_blueprint(main_bp)
-
         from .routes.contas_routes import contas_bp
+        
+        app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
 
     return app

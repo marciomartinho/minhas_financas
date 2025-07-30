@@ -1,46 +1,48 @@
-/* Importa a fonte Roboto do Google Fonts para um visual mais limpo */
+/* Importa a fonte Roboto do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-/* --- Configurações Gerais --- */
+/* --- Reset e Configurações Gerais --- */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: #f4f7f6; /* Um cinza bem claro para o fundo */
+    background-color: #f4f7f6;
     margin: 0;
-    /* Deixa um espaço no topo para o cabeçalho que será fixo */
-    padding-top: 80px; 
+    padding-top: 80px; /* Espaço para o header fixo */
 }
 
 main {
-    /* Espaçamento interno para o conteúdo principal de cada página */
     padding: 40px;
 }
 
-
-/* --- Cabeçalho e Navegação --- */
+/* --- Cabeçalho --- */
 header {
     background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 0 40px;
     height: 80px;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Alinha logo à esquerda e nav à direita */
-    position: fixed; /* Fixa o menu no topo da página */
+    justify-content: space-between;
+    position: fixed;
     top: 0;
-    width: calc(100% - 80px); /* Ocupa a largura toda menos o padding */
-    z-index: 1000; /* Garante que o menu fique acima de outros elementos */
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 .logo {
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #2c3e50; /* Um cinza escuro para o texto */
+    color: #2c3e50;
 }
 
 .logo .material-symbols-outlined {
     font-size: 36px;
-    color: #28a745; /* Verde característico do sistema */
+    color: #28a745;
     margin-right: 10px;
 }
 
@@ -50,6 +52,7 @@ header {
     margin: 0;
 }
 
+/* --- Navegação --- */
 nav ul {
     margin: 0;
     padding: 0;
@@ -59,7 +62,7 @@ nav ul {
 }
 
 nav ul li {
-    position: relative; /* Necessário para o posicionamento do dropdown */
+    position: relative;
     margin-left: 30px;
 }
 
@@ -69,18 +72,18 @@ nav ul li a {
     font-weight: 500;
     font-size: 16px;
     padding: 10px 5px;
-    transition: color 0.3s ease; /* Efeito suave na troca de cor */
+    transition: color 0.3s ease;
 }
 
 nav ul li a:hover {
-    color: #28a745; /* Muda para a cor verde ao passar o mouse */
+    color: #28a745;
 }
 
-
-/* --- Estilos do Menu Dropdown --- */
+/* --- Dropdown --- */
 .dropdown-content {
-    display: none; /* Escondido por padrão */
+    display: none;
     position: absolute;
+    right: 0; /* Alinha o dropdown à direita do item pai */
     background-color: #ffffff;
     min-width: 200px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
@@ -102,7 +105,34 @@ nav ul li a:hover {
     background-color: #f1f1f1;
 }
 
-/* Mostra o dropdown quando o mouse passa por cima do item de menu */
 .dropdown:hover .dropdown-content {
     display: block;
+}
+
+/* --- Responsividade Básica --- */
+@media (max-width: 768px) {
+    header {
+        padding: 0 20px;
+    }
+    
+    .logo h1 {
+        font-size: 20px;
+    }
+    
+    nav ul li {
+        margin-left: 15px;
+    }
+    
+    nav ul li a {
+        font-size: 14px;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    /* Ajusta o dropdown em telas pequenas */
+    .dropdown-content {
+        right: -20px; /* Compensa o padding do header */
+    }
 }
