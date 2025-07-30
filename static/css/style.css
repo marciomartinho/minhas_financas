@@ -3,6 +3,8 @@
 
 /* --- Reset e Configurações Gerais --- */
 * {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -10,87 +12,129 @@ body {
     font-family: 'Roboto', sans-serif;
     background-color: #f4f7f6;
     margin: 0;
-    padding-top: 80px; /* Espaço para o header fixo */
+    padding: 0;
+    min-height: 100vh;
 }
 
-main {
-    padding: 40px;
+/* --- Container --- */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
 /* --- Cabeçalho --- */
-header {
+.main-header {
     background-color: #ffffff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 0 40px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
+    height: 70px;
 }
 
-.logo {
+.main-header .container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* --- Logo --- */
+.logo-link {
     display: flex;
     align-items: center;
     text-decoration: none;
     color: #2c3e50;
+    gap: 10px;
 }
 
-.logo .material-symbols-outlined {
+.logo-icon {
     font-size: 36px;
     color: #28a745;
-    margin-right: 10px;
 }
 
-.logo h1 {
+.logo-text {
     font-size: 24px;
     font-weight: 700;
-    margin: 0;
+    color: #2c3e50;
 }
 
 /* --- Navegação --- */
-nav ul {
-    margin: 0;
-    padding: 0;
+.main-nav ul {
     list-style: none;
     display: flex;
     align-items: center;
+    gap: 30px;
 }
 
-nav ul li {
-    position: relative;
-    margin-left: 30px;
-}
-
-nav ul li a {
+.main-nav a {
     text-decoration: none;
     color: #555;
     font-weight: 500;
     font-size: 16px;
     padding: 10px 5px;
     transition: color 0.3s ease;
+    position: relative;
 }
 
-nav ul li a:hover {
+.main-nav a:hover {
     color: #28a745;
 }
 
 /* --- Dropdown --- */
-.dropdown-content {
-    display: none;
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dropdown-toggle::after {
+    content: '▼';
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.dropdown:hover .dropdown-toggle::after {
+    transform: rotate(180deg);
+}
+
+/* Área invisível para manter o dropdown aberto */
+.dropdown::before {
+    content: '';
     position: absolute;
-    right: 0; /* Alinha o dropdown à direita do item pai */
+    top: 100%;
+    left: -20px;
+    right: -20px;
+    height: 20px;
+    background: transparent;
+    display: none;
+}
+
+.dropdown:hover::before {
+    display: block;
+}
+
+.dropdown-content {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
     background-color: #ffffff;
     min-width: 200px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
     border-radius: 8px;
     padding: 10px 0;
-    margin-top: 10px;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 1001;
 }
 
 .dropdown-content a {
@@ -99,40 +143,92 @@ nav ul li a:hover {
     text-decoration: none;
     display: block;
     font-size: 15px;
+    transition: background-color 0.3s ease;
 }
 
 .dropdown-content a:hover {
     background-color: #f1f1f1;
+    color: #28a745;
 }
 
+/* Mostrar o dropdown com transição suave */
 .dropdown:hover .dropdown-content {
-    display: block;
+    visibility: visible;
+    opacity: 1;
 }
 
-/* --- Responsividade Básica --- */
+/* --- Main Content --- */
+main {
+    margin-top: 70px; /* Altura do header */
+    min-height: calc(100vh - 70px);
+    padding: 40px 0;
+}
+
+/* --- Página Inicial --- */
+.welcome-section {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.welcome-section h1 {
+    font-size: 36px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.welcome-section p {
+    font-size: 18px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* --- Responsividade --- */
 @media (max-width: 768px) {
-    header {
-        padding: 0 20px;
+    .main-header .container {
+        padding: 0 15px;
     }
     
-    .logo h1 {
+    .logo-text {
         font-size: 20px;
     }
     
-    nav ul li {
-        margin-left: 15px;
+    .logo-icon {
+        font-size: 28px;
     }
     
-    nav ul li a {
+    .main-nav ul {
+        gap: 15px;
+    }
+    
+    .main-nav a {
         font-size: 14px;
+        padding: 8px 3px;
     }
     
-    main {
-        padding: 20px;
-    }
-    
-    /* Ajusta o dropdown em telas pequenas */
     .dropdown-content {
-        right: -20px; /* Compensa o padding do header */
+        min-width: 180px;
+        right: -10px;
+    }
+    
+    .welcome-section h1 {
+        font-size: 28px;
+    }
+    
+    .welcome-section p {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-text {
+        display: none;
+    }
+    
+    .main-nav ul {
+        gap: 10px;
+    }
+    
+    .main-nav a {
+        font-size: 13px;
     }
 }

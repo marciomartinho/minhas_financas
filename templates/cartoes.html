@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Cartões de Crédito - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cartoes.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Formulário de Cadastro -->
+<div class="cartoes-form-card">
+    <div class="form-header">
+        <h2>Cadastrar Novo Cartão</h2>
+    </div>
+    
+    <form action="{{ url_for('cartoes.pagina_cartoes') }}" method="POST" enctype="multipart/form-data" class="cartoes-form-horizontal">
+        <div class="cartoes-form-row">
+            <div class="form-group">
+                <label for="nome">Nome do Cartão</label>
+                <input type="text" id="nome" name="nome" placeholder="Ex: Nubank Gold, Inter Black" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="conta_id">Banco/Conta</label>
+                <select id="conta_id" name="conta_id" required>
+                    <option value="">Selecione a conta...</option>
+                    {% for conta in contas %}
+                        <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="dia_vencimento">Dia Vencimento</label>
+                <input type="number" id="dia_vencimento" name="dia_vencimento" min="1" max="31" placeholder="15" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="limite">Limite (R$)</label>
+                <input type="number" id="limite" name="limite" step="0.01" placeholder="5000.00">
+            </div>
+            
+            <div class="form-group">
+                <label for="imagem">Logo</label>
+                <input type="file" id="imagem" name="imagem" accept="image/*">
+                <small class="form-help">Máx: 5MB</small>
+            </div>
+            
+            <div class="form-group cartoes-form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">add</span>
+                    Cadastrar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de Cartões -->
+<div class="cartoes-lista">
+    <h2>Cartões Cadastrados</h2>
+    
+    {% if cartoes %}
+        <div class="cartoes-grid">
+            {% for cartao in cartoes %}
+                <div class="cartao-card {{ 'card-inactive' if not cartao.ativo }}">
+                    <div class="cartao-header">
+                        <div class="cartao-icon">
+                            {% if cartao.imagem_arquivo %}
+                                <img src="{{ url_for('static', filename='uploads/' + cartao.imagem_arquivo) }}" alt="{{ cartao.nome }}">
+                            {% else %}
+                                <span class="material-symbols-outlined">credit_card</span>
+                            {% endif %}
+                        </div>
+                        <div class="cartao-info">
+                            <h3>{{ cartao.nome }}</h3>
+                            <span class="cartao-banco">
+                                <span class="material-symbols-outlined">account_balance</span>
+                                {{ cartao.conta.nome }}
+                            </span>
+                        </div>
+                        {% if not cartao.ativo %}
+                            <span class="badge-inativo">Inativo</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="cartao-detalhes">
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Vencimento:</span>
+                            <span class="detalhe-valor">Dia {{ cartao.dia_vencimento }}</span>
+                        </div>
+                        {% if cartao.limite %}
+                            <div class="detalhe-item">
+                                <span class="detalhe-label">Limite:</span>
+                                <span class="detalhe-valor">R$ {{ cartao.limite|moeda }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="cartao-actions">
+                        <button class="btn-icon btn-toggle" onclick="toggleCartao({{ cartao.id }})" title="{{ 'Desativar' if cartao.ativo else 'Ativar' }}">
+                            <span class="material-symbols-outlined">{{ 'visibility_off' if cartao.ativo else 'visibility' }}</span>
+                        </button>
+                        <button class="btn-icon btn-edit" onclick="editarCartao({{ cartao.id }}, '{{ cartao.nome }}', {{ cartao.conta_id }}, {{ cartao.dia_vencimento }}, {{ cartao.limite or 'null' }})">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="confirmarExclusaoCartao({{ cartao.id }}, '{{ cartao.nome }}')">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">credit_card</span>
+            <p>Nenhum cartão cadastrado ainda.</p>
+            <p>Comece cadastrando seu primeiro cartão acima!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Edição -->
+<div id="modalEdicao" class="cartoes-modal">
+    <div class="cartoes-modal-content">
+        <div class="cartoes-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Cartão
+            </h3>
+            <span class="cartoes-modal-close" onclick="fecharModal()">&times;</span>
+        </div>
+        <form id="formEdicao" method="POST">
+            <div class="cartoes-modal-body">
+                <div class="form-group">
+                    <label for="edit_nome">
+                        <span class="material-symbols-outlined">credit_card</span>
+                        Nome do Cartão
+                    </label>
+                    <input type="text" id="edit_nome" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_conta">
+                        <span class="material-symbols-outlined">account_balance</span>
+                        Banco/Conta
+                    </label>
+                    <select id="edit_conta" name="conta_id" required>
+                        {% for conta in contas %}
+                            <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_vencimento">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        Dia do Vencimento
+                    </label>
+                    <input type="number" id="edit_vencimento" name="dia_vencimento" min="1" max="31" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_limite">
+                        <span class="material-symbols-outlined">attach_money</span>
+                        Limite (R$)
+                    </label>
+                    <input type="number" id="edit_limite" name="limite" step="0.01">
+                </div>
+            </div>
+            
+            <div class="cartoes-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="modalExclusao" class="cartoes-modal">
+    <div class="cartoes-modal-content cartoes-modal-delete">
+        <div class="cartoes-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="cartoes-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="cartoes-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message">
+                Tem certeza que deseja excluir o cartão <strong id="nomeCartaoExcluir"></strong>?
+            </p>
+            <p class="delete-submessage">
+                Esta ação não pode ser desfeita. Todos os lançamentos deste cartão serão mantidos.
+            </p>
+        </div>
+        <form id="formExclusao" method="POST">
+            <div class="cartoes-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <span class="material-symbols-outlined">delete</span>
+                    Sim, Excluir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form oculto para toggle de status -->
+<form id="formToggle" method="POST" style="display: none;"></form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/cartoes.js') }}"></script>
+{% endblock %}

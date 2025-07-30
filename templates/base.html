@@ -3,34 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
+    <!-- Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <!-- CSS Principal -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
-
+    <!-- CSS de Formulários (apenas nas páginas que precisam) -->
+    {% block extra_css %}{% endblock %}
+    
     <title>{% block title %}Minhas Finanças{% endblock %}</title>
 </head>
 <body>
-
     <header class="main-header">
         <div class="container">
             <a href="{{ url_for('main.home') }}" class="logo-link">
+                <span class="material-symbols-outlined logo-icon">savings</span>
                 <span class="logo-text">Minhas Finanças</span>
             </a>
+            
             <nav class="main-nav">
                 <ul>
                     <li><a href="#">Lançamento</a></li>
                     <li><a href="#">Extrato/Cartão</a></li>
-                    <li><a href="#">Cadastros</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle">Cadastros</a>
+                        <div class="dropdown-content">
+                            <a href="{{ url_for('contas.pagina_contas') }}">Contas</a>
+                            <a href="{{ url_for('categorias.pagina_categorias') }}">Categorias</a>
+                            <a href="{{ url_for('cartoes.pagina_cartoes') }}">Cartões</a>
+                        </div>
+                    </li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <main class="container">
-        {% block content %}
-        {% endblock %}
+    <main>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

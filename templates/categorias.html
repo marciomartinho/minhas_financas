@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Categorias - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/categorias.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Formulário de Cadastro de Categoria -->
+<div class="categorias-form-card">
+    <div class="form-header">
+        <h2>Cadastrar Nova Categoria</h2>
+    </div>
+    
+    <form action="{{ url_for('categorias.pagina_categorias') }}" method="POST" class="categorias-form-horizontal">
+        <div class="categorias-form-row">
+            <div class="form-group">
+                <label for="nome">Nome da Categoria</label>
+                <input type="text" id="nome" name="nome" placeholder="Ex: Alimentação, Salário" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="Despesa">Despesa</option>
+                    <option value="Receita">Receita</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="icone">Ícone</label>
+                <select id="icone" name="icone" class="icon-select">
+                    <option value="category" data-icon="category">Padrão</option>
+                    <option value="restaurant" data-icon="restaurant">Alimentação</option>
+                    <option value="home" data-icon="home">Casa</option>
+                    <option value="directions_car" data-icon="directions_car">Transporte</option>
+                    <option value="shopping_cart" data-icon="shopping_cart">Compras</option>
+                    <option value="school" data-icon="school">Educação</option>
+                    <option value="favorite" data-icon="favorite">Saúde</option>
+                    <option value="sports_esports" data-icon="sports_esports">Lazer</option>
+                    <option value="paid" data-icon="paid">Salário</option>
+                    <option value="trending_up" data-icon="trending_up">Investimentos</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="cor">Cor</label>
+                <input type="color" id="cor" name="cor" value="#28a745">
+            </div>
+            
+            <div class="form-group categorias-form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">add</span>
+                    Cadastrar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de Categorias -->
+<div class="categorias-lista">
+    <h2>Categorias Cadastradas</h2>
+    
+    <div class="categorias-tabs">
+        <button class="tab-button active" onclick="filtrarCategorias('todos')">
+            Todas
+        </button>
+        <button class="tab-button" onclick="filtrarCategorias('Despesa')">
+            <span class="material-symbols-outlined">trending_down</span>
+            Despesas
+        </button>
+        <button class="tab-button" onclick="filtrarCategorias('Receita')">
+            <span class="material-symbols-outlined">trending_up</span>
+            Receitas
+        </button>
+    </div>
+    
+    {% if categorias %}
+        <div class="categorias-container">
+            {% for categoria in categorias %}
+                <div class="categoria-item" data-tipo="{{ categoria.tipo }}">
+                    <div class="categoria-header">
+                        <div class="categoria-info">
+                            <span class="categoria-icon" style="color: {{ categoria.cor }}">
+                                <span class="material-symbols-outlined">{{ categoria.icone }}</span>
+                            </span>
+                            <div>
+                                <h3>{{ categoria.nome }}</h3>
+                                <span class="categoria-badge {{ 'badge-despesa' if categoria.tipo == 'Despesa' else 'badge-receita' }}">
+                                    {{ categoria.tipo }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="categoria-actions">
+                            <button class="btn-icon btn-add-sub" onclick="abrirModalSubcategoria({{ categoria.id }}, '{{ categoria.nome }}')">
+                                <span class="material-symbols-outlined">add_circle</span>
+                            </button>
+                            <button class="btn-icon btn-edit" onclick="editarCategoria({{ categoria.id }}, '{{ categoria.nome }}', '{{ categoria.tipo }}', '{{ categoria.icone }}', '{{ categoria.cor }}')">
+                                <span class="material-symbols-outlined">edit</span>
+                            </button>
+                            <button class="btn-icon btn-delete" onclick="confirmarExclusaoCategoria({{ categoria.id }}, '{{ categoria.nome }}')">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if categoria.subcategorias %}
+                        <div class="subcategorias-list">
+                            {% for subcategoria in categoria.subcategorias %}
+                                {% if subcategoria.ativa %}
+                                    <div class="subcategoria-item">
+                                        <span class="subcategoria-nome">
+                                            <span class="material-symbols-outlined">subdirectory_arrow_right</span>
+                                            {{ subcategoria.nome }}
+                                        </span>
+                                        <div class="subcategoria-actions">
+                                            <button class="btn-icon-small" onclick="editarSubcategoria({{ subcategoria.id }}, '{{ subcategoria.nome }}', '{{ subcategoria.descricao }}')">
+                                                <span class="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button class="btn-icon-small" onclick="confirmarExclusaoSubcategoria({{ subcategoria.id }}, '{{ subcategoria.nome }}')">
+                                                <span class="material-symbols-outlined">close</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">category</span>
+            <p>Nenhuma categoria cadastrada ainda.</p>
+            <p>Comece cadastrando sua primeira categoria acima!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Edição de Categoria -->
+<div id="modalEdicaoCategoria" class="categorias-modal">
+    <div class="categorias-modal-content">
+        <div class="categorias-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Categoria
+            </h3>
+            <span class="categorias-modal-close" onclick="fecharModalCategoria()">&times;</span>
+        </div>
+        <form id="formEdicaoCategoria" method="POST">
+            <div class="categorias-modal-body">
+                <div class="form-group">
+                    <label for="edit_nome_categoria">Nome da Categoria</label>
+                    <input type="text" id="edit_nome_categoria" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_tipo_categoria">Tipo</label>
+                    <select id="edit_tipo_categoria" name="tipo" required>
+                        <option value="Despesa">Despesa</option>
+                        <option value="Receita">Receita</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_icone_categoria">Ícone</label>
+                    <select id="edit_icone_categoria" name="icone" class="icon-select">
+                        <option value="category">Padrão</option>
+                        <option value="restaurant">Alimentação</option>
+                        <option value="home">Casa</option>
+                        <option value="directions_car">Transporte</option>
+                        <option value="shopping_cart">Compras</option>
+                        <option value="school">Educação</option>
+                        <option value="favorite">Saúde</option>
+                        <option value="sports_esports">Lazer</option>
+                        <option value="paid">Salário</option>
+                        <option value="trending_up">Investimentos</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_cor_categoria">Cor</label>
+                    <input type="color" id="edit_cor_categoria" name="cor">
+                </div>
+            </div>
+            
+            <div class="categorias-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalCategoria()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Adicionar Subcategoria -->
+<div id="modalSubcategoria" class="categorias-modal">
+    <div class="categorias-modal-content modal-small">
+        <div class="categorias-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">add_circle</span>
+                Adicionar Subcategoria
+            </h3>
+            <span class="categorias-modal-close" onclick="fecharModalSubcategoria()">&times;</span>
+        </div>
+        <form id="formSubcategoria" method="POST">
+            <div class="categorias-modal-body">
+                <p class="modal-subtitle">Categoria: <strong id="nomeCategoriaPai"></strong></p>
+                
+                <div class="form-group">
+                    <label for="nome_subcategoria">Nome da Subcategoria</label>
+                    <input type="text" id="nome_subcategoria" name="nome" placeholder="Ex: Supermercado, Restaurante" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricao_subcategoria">Descrição (opcional)</label>
+                    <input type="text" id="descricao_subcategoria" name="descricao" placeholder="Breve descrição">
+                </div>
+            </div>
+            
+            <div class="categorias-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalSubcategoria()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">add</span>
+                    Adicionar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Edição de Subcategoria -->
+<div id="modalEdicaoSubcategoria" class="categorias-modal">
+    <div class="categorias-modal-content modal-small">
+        <div class="categorias-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Subcategoria
+            </h3>
+            <span class="categorias-modal-close" onclick="fecharModalEdicaoSubcategoria()">&times;</span>
+        </div>
+        <form id="formEdicaoSubcategoria" method="POST">
+            <div class="categorias-modal-body">
+                <div class="form-group">
+                    <label for="edit_nome_subcategoria">Nome da Subcategoria</label>
+                    <input type="text" id="edit_nome_subcategoria" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_descricao_subcategoria">Descrição (opcional)</label>
+                    <input type="text" id="edit_descricao_subcategoria" name="descricao">
+                </div>
+            </div>
+            
+            <div class="categorias-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEdicaoSubcategoria()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="modalExclusao" class="categorias-modal">
+    <div class="categorias-modal-content modal-small">
+        <div class="categorias-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="categorias-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="categorias-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message" id="mensagemExclusao"></p>
+            <p class="delete-submessage" id="submensagemExclusao"></p>
+        </div>
+        <form id="formExclusao" method="POST">
+            <div class="categorias-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <span class="material-symbols-outlined">delete</span>
+                    Sim, Excluir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/categorias.js') }}"></script>
+{% endblock %}

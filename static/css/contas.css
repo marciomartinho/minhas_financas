@@ -1,0 +1,521 @@
+/* static/css/contas.css */
+/* CSS específico para a página de contas */
+
+/* --- Alertas de Mensagens --- */
+.alert {
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    animation: slideIn 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* --- Formulário Horizontal (Específico para Contas) --- */
+.contas-form-card {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 40px;
+}
+
+.contas-form-card .form-header {
+    margin-bottom: 25px;
+}
+
+.contas-form-card h2 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.contas-form-horizontal {
+    width: 100%;
+}
+
+.contas-form-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.contas-form-horizontal .form-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.contas-form-horizontal .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+    font-size: 13px;
+}
+
+.contas-form-horizontal .form-group input,
+.contas-form-horizontal .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    background-color: #fafafa;
+}
+
+.contas-form-horizontal .form-group input:focus,
+.contas-form-horizontal .form-group select:focus {
+    outline: none;
+    border-color: #28a745;
+    background-color: #ffffff;
+}
+
+.form-help {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+    display: block;
+}
+
+.contas-form-actions {
+    flex: 0 0 auto;
+}
+
+.contas-form-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    width: auto;
+}
+
+/* --- Lista de Contas --- */
+.contas-lista {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.contas-lista h2 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin: 0 0 25px 0;
+}
+
+/* --- Grid de Contas --- */
+.contas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* --- Card de Conta --- */
+.conta-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.conta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.conta-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.conta-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.conta-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 5px;
+}
+
+.conta-icon .material-symbols-outlined {
+    font-size: 28px;
+    color: #28a745;
+}
+
+.conta-info h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2c3e50;
+}
+
+.conta-tipo {
+    font-size: 13px;
+    color: #6c757d;
+    background-color: #e9ecef;
+    padding: 3px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+.conta-saldo {
+    background-color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.saldo-label {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.saldo-valor {
+    font-size: 18px;
+    font-weight: 600;
+    color: #28a745;
+}
+
+.conta-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* --- Botões de Ação --- */
+.btn-icon {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.btn-edit {
+    color: #007bff;
+}
+
+.btn-edit:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-delete {
+    color: #dc3545;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+/* --- Estado Vazio --- */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state .material-symbols-outlined {
+    font-size: 80px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state p {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+/* --- Modal de Edição --- */
+.contas-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.contas-modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.contas-modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    padding: 25px 30px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.contas-modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.contas-modal-header h3 .material-symbols-outlined {
+    font-size: 24px;
+}
+
+.contas-modal-close {
+    font-size: 32px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    padding: 0 5px;
+}
+
+.contas-modal-close:hover {
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+.contas-modal-body {
+    padding: 30px;
+}
+
+.contas-modal-body .form-group {
+    margin-bottom: 20px;
+}
+
+.contas-modal-body .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.contas-modal-body .form-group label .material-symbols-outlined {
+    font-size: 20px;
+    color: #28a745;
+}
+
+.contas-modal-body .form-group input,
+.contas-modal-body .form-group select {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.contas-modal-body .form-group input:focus,
+.contas-modal-body .form-group select:focus {
+    outline: none;
+    border-color: #28a745;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
+}
+
+.contas-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 30px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 16px 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+.contas-modal-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.contas-modal-actions .btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.contas-modal-actions .btn-secondary {
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+
+.contas-modal-actions .btn-secondary:hover {
+    background-color: #dee2e6;
+    transform: translateY(-1px);
+}
+
+.contas-modal-actions .btn-primary {
+    background-color: #28a745;
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.contas-modal-actions .btn-primary:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+    .contas-form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .contas-form-horizontal .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .contas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .contas-modal-content {
+        margin: 20% auto;
+        width: 95%;
+    }
+}
+
+/* --- Modal de Exclusão Específico --- */
+.contas-modal-delete {
+    max-width: 450px;
+}
+
+.modal-header-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.modal-header-danger h3 {
+    color: #ffffff;
+}
+
+.delete-warning-icon {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.delete-warning-icon .material-symbols-outlined {
+    font-size: 64px;
+    color: #dc3545;
+    background-color: #fee;
+    border-radius: 50%;
+    padding: 20px;
+}
+
+.delete-message {
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.delete-message strong {
+    color: #dc3545;
+}
+
+.delete-submessage {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}

@@ -25,8 +25,14 @@ def create_app():
     )
 
     # --- CONFIGURAÇÃO ---
+    # Secret key para sessões (necessário para flash messages)
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    
     # Garante que o UPLOAD_FOLDER também use o caminho correto
     app.config['UPLOAD_FOLDER'] = os.path.join(app.static_folder, 'uploads')
+    
+    # Criar pasta de uploads se não existir
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     db_uri = os.getenv('DATABASE_URI')
     if not db_uri:
@@ -38,13 +44,26 @@ def create_app():
     # --- INICIALIZAÇÃO DAS EXTENSÕES ---
     db.init_app(app)
     Migrate(app, db)
+    
+    # --- FILTROS PERSONALIZADOS ---
+    @app.template_filter('moeda')
+    def moeda_filter(value):
+        """Formata valor para moeda brasileira com separador de milhar"""
+        try:
+            return f"{value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        except:
+            return "0,00"
 
     # --- REGISTRO DOS BLUEPRINTS (ROTAS) ---
     with app.app_context():
         from .routes.main_routes import main_bp
         from .routes.contas_routes import contas_bp
+        from .routes.categorias_routes import categorias_bp
+        from .routes.cartoes_routes import cartoes_bp
         
         app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
+        app.register_blueprint(categorias_bp)
+        app.register_blueprint(cartoes_bp)
 
     return app

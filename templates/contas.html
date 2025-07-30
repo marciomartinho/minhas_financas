@@ -1,38 +1,205 @@
 {% extends "base.html" %}
 
-{% block title %}Cadastro de Conta - Minhas Finanças{% endblock %}
+{% block title %}Contas - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/contas.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>Cadastrar Nova Conta</h1>
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Formulário de Cadastro -->
+<div class="contas-form-card">
+    <div class="form-header">
+        <h2>Cadastrar Nova Conta</h2>
     </div>
     
-    <form action="" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="nome">Nome da Conta</label>
-            <input type="text" id="nome" name="nome" placeholder="Ex: Nubank, Itaú Corretora" required>
+    <form action="{{ url_for('contas.pagina_contas') }}" method="POST" enctype="multipart/form-data" class="contas-form-horizontal">
+        <div class="contas-form-row">
+            <div class="form-group">
+                <label for="nome">Nome da Conta</label>
+                <input type="text" id="nome" name="nome" placeholder="Ex: Nubank, Itaú" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="tipo_conta">Tipo</label>
+                <select id="tipo_conta" name="tipo_conta" required>
+                    <option value="Corrente">Corrente</option>
+                    <option value="Investimento">Investimento</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="saldo_inicial">Saldo Inicial (R$)</label>
+                <input type="number" id="saldo_inicial" name="saldo_inicial" step="0.01" value="0.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="imagem">Logo</label>
+                <input type="file" id="imagem" name="imagem" accept="image/*">
+                <small class="form-help">Tamanho máximo: 5MB</small>
+            </div>
+            
+            <div class="form-group contas-form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">add</span>
+                    Cadastrar
+                </button>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="tipo_conta">Tipo da Conta</label>
-            <select id="tipo_conta" name="tipo_conta" required>
-                <option value="Corrente">Conta Corrente</option>
-                <option value="Investimento">Investimento</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="saldo_inicial">Saldo Inicial (R$)</label>
-            <input type="number" id="saldo_inicial" name="saldo_inicial" step="0.01" placeholder="0.00" required>
-        </div>
-
-        <div class="form-group">
-            <label for="imagem">Logo da Conta (Opcional)</label>
-            <input type="file" id="imagem" name="imagem" accept="image/png, image/jpeg, image/svg+xml">
-        </div>
-
-        <button type="submit" class="btn">Salvar Conta</button>
     </form>
 </div>
+
+<!-- Lista de Contas -->
+<div class="contas-lista">
+    <h2>Contas Cadastradas</h2>
+    
+    {% if contas %}
+        <div class="contas-grid">
+            {% for conta in contas %}
+                <div class="conta-card">
+                    <div class="conta-header">
+                        <div class="conta-icon">
+                            {% if conta.imagem_arquivo %}
+                                <img src="{{ url_for('static', filename='uploads/' + conta.imagem_arquivo) }}" alt="{{ conta.nome }}">
+                            {% else %}
+                                <span class="material-symbols-outlined">
+                                    {{ 'account_balance' if conta.tipo_conta == 'Corrente' else 'trending_up' }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="conta-info">
+                            <h3>{{ conta.nome }}</h3>
+                            <span class="conta-tipo">{{ conta.tipo_conta }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="conta-saldo">
+                        <span class="saldo-label">Saldo Inicial:</span>
+                        <span class="saldo-valor">R$ {{ conta.saldo_inicial|moeda }}</span>
+                    </div>
+                    
+                    <div class="conta-actions">
+                        <button class="btn-icon btn-edit" onclick="editarConta({{ conta.id }}, '{{ conta.nome }}', '{{ conta.tipo_conta }}', {{ conta.saldo_inicial }})">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="confirmarExclusaoConta({{ conta.id }}, '{{ conta.nome }}')">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+            <p>Nenhuma conta cadastrada ainda.</p>
+            <p>Comece cadastrando sua primeira conta acima!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Edição -->
+<div id="modalEdicao" class="contas-modal">
+    <div class="contas-modal-content">
+        <div class="contas-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Conta
+            </h3>
+            <span class="contas-modal-close" onclick="fecharModal()">&times;</span>
+        </div>
+        <form id="formEdicao" method="POST">
+            <div class="contas-modal-body">
+                <div class="form-group">
+                    <label for="edit_nome">
+                        <span class="material-symbols-outlined">account_balance</span>
+                        Nome da Conta
+                    </label>
+                    <input type="text" id="edit_nome" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_tipo">
+                        <span class="material-symbols-outlined">category</span>
+                        Tipo
+                    </label>
+                    <select id="edit_tipo" name="tipo_conta" required>
+                        <option value="Corrente">Corrente</option>
+                        <option value="Investimento">Investimento</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_saldo">
+                        <span class="material-symbols-outlined">attach_money</span>
+                        Saldo Inicial (R$)
+                    </label>
+                    <input type="number" id="edit_saldo" name="saldo_inicial" step="0.01" required>
+                </div>
+            </div>
+            
+            <div class="contas-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="modalExclusao" class="contas-modal">
+    <div class="contas-modal-content contas-modal-delete">
+        <div class="contas-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="contas-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="contas-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message">
+                Tem certeza que deseja excluir a conta <strong id="nomeContaExcluir"></strong>?
+            </p>
+            <p class="delete-submessage">
+                Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+            </p>
+        </div>
+        <form id="formExclusao" method="POST">
+            <div class="contas-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <span class="material-symbols-outlined">delete</span>
+                    Sim, Excluir
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/contas.js') }}"></script>
 {% endblock %}
