@@ -177,6 +177,19 @@
     border-top: 1px solid #e9ecef;
 }
 
+/* --- Campos de transferência --- */
+.campos-transferencia {
+    background-color: #f0f8ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #b8daff;
+}
+
+.campos-transferencia .form-group select {
+    background-color: #ffffff;
+}
+
 /* --- Grid de Lançamentos --- */
 .lancamentos-grid-container {
     background-color: #ffffff;
@@ -348,6 +361,11 @@
 .tipo-receita {
     background-color: #28a74510;
     color: #28a745;
+}
+
+.tipo-transferencia {
+    background-color: #17a2b810;
+    color: #17a2b8;
 }
 
 .row-receita .col-valor {

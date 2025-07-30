@@ -50,8 +50,8 @@
             <span class="tipo-label">Cartão</span>
         </label>
         
-        <label class="tipo-option disabled">
-            <input type="radio" name="tipo_lancamento" value="transferencia" disabled>
+        <label class="tipo-option">
+            <input type="radio" name="tipo_lancamento" value="transferencia">
             <span class="tipo-icon">
                 <span class="material-symbols-outlined">swap_horiz</span>
             </span>
@@ -61,7 +61,8 @@
     
     <!-- Formulário de Despesa/Receita -->
     <form id="formLancamento" action="{{ url_for('lancamentos.criar_despesa') }}" method="POST" class="lancamento-form">
-        <div class="form-row">
+        <!-- Campos comuns -->
+        <div class="form-row campos-comuns">
             <div class="form-group">
                 <label for="descricao">Descrição</label>
                 <input type="text" id="descricao" name="descricao" placeholder="Ex: Conta de luz, Supermercado" required autofocus>
@@ -73,68 +74,94 @@
             </div>
             
             <div class="form-group form-group-small">
-                <label for="data_vencimento">Vencimento</label>
+                <label for="data_vencimento" id="label_data_vencimento">Vencimento</label>
                 <input type="date" id="data_vencimento" name="data_vencimento" value="{{ today }}" required>
             </div>
         </div>
         
-        <div class="form-row">
+        <!-- Campos de transferência (inicialmente ocultos) -->
+        <div class="form-row campos-transferencia" style="display: none;">
             <div class="form-group">
-                <label for="categoria_id">Categoria</label>
-                <select id="categoria_id" name="categoria_id" required>
-                    <option value="">Selecione...</option>
-                    <optgroup label="Despesas" class="categoria-despesa">
-                        {% for categoria in categorias_despesa %}
-                            <option value="{{ categoria.id }}" data-tipo="despesa">{{ categoria.nome }}</option>
-                        {% endfor %}
-                    </optgroup>
-                    <optgroup label="Receitas" class="categoria-receita" style="display: none;">
-                        {% for categoria in categorias_receita %}
-                            <option value="{{ categoria.id }}" data-tipo="receita">{{ categoria.nome }}</option>
-                        {% endfor %}
-                    </optgroup>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="subcategoria_id">Subcategoria</label>
-                <select id="subcategoria_id" name="subcategoria_id">
-                    <option value="">Selecione primeiro uma categoria</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="conta_id">Conta</label>
-                <select id="conta_id" name="conta_id" required>
+                <label for="conta_origem_id">Conta Origem</label>
+                <select id="conta_origem_id" name="conta_origem_id">
                     <option value="">Selecione...</option>
                     {% for conta in contas %}
-                        <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                        <option value="{{ conta.id }}">{{ conta.nome }} (R$ {{ conta.saldo_atual|moeda }})</option>
                     {% endfor %}
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="tag">Tag</label>
-                <input type="text" id="tag" name="tag" placeholder="Ex: Viagem, Projeto X" maxlength="50">
+                <label for="conta_destino_id">Conta Destino</label>
+                <select id="conta_destino_id" name="conta_destino_id">
+                    <option value="">Selecione...</option>
+                    {% for conta in contas %}
+                        <option value="{{ conta.id }}">{{ conta.nome }} (R$ {{ conta.saldo_atual|moeda }})</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         
-        <div class="form-row">
-            <div class="form-group">
-                <label for="recorrencia">Recorrência</label>
-                <select id="recorrencia" name="recorrencia">
-                    <option value="unica">Única vez</option>
-                    <option value="mensal">Mensal</option>
-                    <option value="semanal">Semanal</option>
-                    <option value="quinzenal">Quinzenal</option>
-                    <option value="anual">Anual</option>
-                    <option value="parcelada">Parcelada</option>
-                </select>
+        <!-- Campos de despesa/receita -->
+        <div class="campos-despesa-receita">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="categoria_id">Categoria</label>
+                    <select id="categoria_id" name="categoria_id" required>
+                        <option value="">Selecione...</option>
+                        <optgroup label="Despesas" class="categoria-despesa">
+                            {% for categoria in categorias_despesa %}
+                                <option value="{{ categoria.id }}" data-tipo="despesa">{{ categoria.nome }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Receitas" class="categoria-receita" style="display: none;">
+                            {% for categoria in categorias_receita %}
+                                <option value="{{ categoria.id }}" data-tipo="receita">{{ categoria.nome }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subcategoria_id">Subcategoria</label>
+                    <select id="subcategoria_id" name="subcategoria_id">
+                        <option value="">Selecione primeiro uma categoria</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta_id">Conta</label>
+                    <select id="conta_id" name="conta_id" required>
+                        <option value="">Selecione...</option>
+                        {% for conta in contas %}
+                            <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tag">Tag</label>
+                    <input type="text" id="tag" name="tag" placeholder="Ex: Viagem, Projeto X" maxlength="50">
+                </div>
             </div>
             
-            <div class="form-group" id="parcelas-group" style="display: none;">
-                <label for="num_parcelas">Número de Parcelas</label>
-                <input type="number" id="num_parcelas" name="num_parcelas" min="2" max="48" placeholder="2">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="recorrencia">Recorrência</label>
+                    <select id="recorrencia" name="recorrencia">
+                        <option value="unica">Única vez</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="semanal">Semanal</option>
+                        <option value="quinzenal">Quinzenal</option>
+                        <option value="anual">Anual</option>
+                        <option value="parcelada">Parcelada</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="parcelas-group" style="display: none;">
+                    <label for="num_parcelas">Número de Parcelas</label>
+                    <input type="number" id="num_parcelas" name="num_parcelas" min="2" max="48" placeholder="2">
+                </div>
             </div>
         </div>
         
@@ -182,7 +209,13 @@
                             <td class="col-descricao">
                                 <span class="tipo-indicator tipo-{{ lancamento.tipo }}">
                                     <span class="material-symbols-outlined">
-                                        {{ 'trending_up' if lancamento.tipo == 'receita' else 'trending_down' }}
+                                        {% if lancamento.tipo == 'receita' %}
+                                            trending_up
+                                        {% elif lancamento.tipo == 'despesa' %}
+                                            trending_down
+                                        {% elif lancamento.tipo == 'transferencia' %}
+                                            swap_horiz
+                                        {% endif %}
                                     </span>
                                 </span>
                                 {{ lancamento.descricao }}
@@ -200,7 +233,15 @@
                                 {% endif %}
                             </td>
                             <td class="col-conta">
-                                {{ lancamento.conta.nome }}
+                                {% if lancamento.tipo == 'transferencia' %}
+                                    {% if lancamento.conta_destino %}
+                                        → {{ lancamento.conta_destino.nome }}
+                                    {% else %}
+                                        {{ lancamento.conta.nome }} →
+                                    {% endif %}
+                                {% else %}
+                                    {{ lancamento.conta.nome }}
+                                {% endif %}
                             </td>
                             <td class="col-tag">
                                 {% if lancamento.tag %}

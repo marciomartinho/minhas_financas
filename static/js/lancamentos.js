@@ -14,34 +14,79 @@ function alternarTipoLancamento(tipo) {
         form.action = '/lancamentos/despesa';
     } else if (tipo === 'receita') {
         form.action = '/lancamentos/receita';
+    } else if (tipo === 'transferencia') {
+        form.action = '/lancamentos/transferencia';
     }
     
-    // Alternar categorias visíveis
-    const categoriaDespesa = document.querySelector('.categoria-despesa');
-    const categoriaReceita = document.querySelector('.categoria-receita');
-    const categoriaSelect = document.getElementById('categoria_id');
+    // Alternar campos visíveis
+    const camposTransferencia = document.querySelector('.campos-transferencia');
+    const camposDespesaReceita = document.querySelector('.campos-despesa-receita');
+    const labelData = document.getElementById('label_data_vencimento');
     
-    if (tipo === 'despesa') {
-        categoriaDespesa.style.display = 'block';
-        categoriaReceita.style.display = 'none';
-    } else if (tipo === 'receita') {
-        categoriaDespesa.style.display = 'none';
-        categoriaReceita.style.display = 'block';
-    }
-    
-    // Resetar seleção de categoria e subcategoria
-    categoriaSelect.value = '';
-    const subcategoriaSelect = document.getElementById('subcategoria_id');
-    subcategoriaSelect.innerHTML = '<option value="">Selecione primeiro uma categoria</option>';
-    subcategoriaSelect.disabled = true;
-    
-    // Atualizar labels se necessário
-    const dataLabel = document.querySelector('label[for="data_vencimento"]');
-    if (tipo === 'receita') {
-        dataLabel.textContent = 'Data de Recebimento';
+    if (tipo === 'transferencia') {
+        // Mostrar campos de transferência
+        camposTransferencia.style.display = 'flex';
+        camposDespesaReceita.style.display = 'none';
+        
+        // Ajustar label da data
+        labelData.textContent = 'Data';
+        
+        // Tornar campos de transferência obrigatórios
+        document.getElementById('conta_origem_id').required = true;
+        document.getElementById('conta_destino_id').required = true;
+        
+        // Remover obrigatoriedade dos campos de despesa/receita
+        document.getElementById('categoria_id').required = false;
+        document.getElementById('conta_id').required = false;
+        
     } else {
-        dataLabel.textContent = 'Vencimento';
+        // Mostrar campos de despesa/receita
+        camposTransferencia.style.display = 'none';
+        camposDespesaReceita.style.display = 'block';
+        
+        // Ajustar label da data
+        labelData.textContent = tipo === 'receita' ? 'Data de Recebimento' : 'Vencimento';
+        
+        // Tornar campos de despesa/receita obrigatórios
+        document.getElementById('categoria_id').required = true;
+        document.getElementById('conta_id').required = true;
+        
+        // Remover obrigatoriedade dos campos de transferência
+        document.getElementById('conta_origem_id').required = false;
+        document.getElementById('conta_destino_id').required = false;
+        
+        // Alternar categorias visíveis
+        const categoriaDespesa = document.querySelector('.categoria-despesa');
+        const categoriaReceita = document.querySelector('.categoria-receita');
+        const categoriaSelect = document.getElementById('categoria_id');
+        
+        if (tipo === 'despesa') {
+            categoriaDespesa.style.display = 'block';
+            categoriaReceita.style.display = 'none';
+        } else if (tipo === 'receita') {
+            categoriaDespesa.style.display = 'none';
+            categoriaReceita.style.display = 'block';
+        }
+        
+        // Resetar seleção de categoria e subcategoria
+        categoriaSelect.value = '';
+        const subcategoriaSelect = document.getElementById('subcategoria_id');
+        subcategoriaSelect.innerHTML = '<option value="">Selecione primeiro uma categoria</option>';
+        subcategoriaSelect.disabled = true;
     }
+}
+
+// Função para validar transferência
+function validarTransferencia() {
+    const contaOrigem = document.getElementById('conta_origem_id').value;
+    const contaDestino = document.getElementById('conta_destino_id').value;
+    
+    if (contaOrigem && contaDestino && contaOrigem === contaDestino) {
+        alert('A conta de origem e destino devem ser diferentes!');
+        return false;
+    }
+    
+    return true;
 }
 
 // Função para confirmar exclusão
@@ -201,6 +246,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Event listener para validar contas na transferência
+    const contaOrigemSelect = document.getElementById('conta_origem_id');
+    const contaDestinoSelect = document.getElementById('conta_destino_id');
+    
+    if (contaOrigemSelect && contaDestinoSelect) {
+        const validarContas = function() {
+            if (this.value && contaOrigemSelect.value === contaDestinoSelect.value) {
+                alert('A conta de origem e destino devem ser diferentes!');
+                this.value = '';
+            }
+        };
+        
+        contaOrigemSelect.addEventListener('change', validarContas);
+        contaDestinoSelect.addEventListener('change', validarContas);
+    }
+    
     // Formatar campo de valor
     const valorInput = document.getElementById('valor');
     if (valorInput) {
@@ -333,8 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
             valor = valor.replace(',', '.');
             valorInput.value = valor;
             
-            const recorrencia = document.getElementById('recorrencia').value;
-            
             // Validar valor
             if (!valor || parseFloat(valor) <= 0) {
                 e.preventDefault();
@@ -346,21 +405,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Validar parcelas se necessário
-            if (recorrencia === 'parcelada') {
-                const numParcelas = document.getElementById('num_parcelas').value;
-                if (!numParcelas || parseInt(numParcelas) < 2) {
+            // Validações específicas por tipo
+            if (tipoAtual === 'transferencia') {
+                if (!validarTransferencia()) {
                     e.preventDefault();
-                    alert('Por favor, informe o número de parcelas (mínimo 2).');
-                    document.getElementById('num_parcelas').focus();
+                    valorInput.value = valor.replace('.', ',');
                     return;
+                }
+            } else {
+                const recorrencia = document.getElementById('recorrencia').value;
+                
+                // Validar parcelas se necessário
+                if (recorrencia === 'parcelada') {
+                    const numParcelas = document.getElementById('num_parcelas').value;
+                    if (!numParcelas || parseInt(numParcelas) < 2) {
+                        e.preventDefault();
+                        alert('Por favor, informe o número de parcelas (mínimo 2).');
+                        document.getElementById('num_parcelas').focus();
+                        return;
+                    }
                 }
             }
         });
     }
 });
 
-// Adicionar estilos CSS para tooltips
+// Adicionar estilos CSS para tooltips e transferência
 const style = document.createElement('style');
 style.textContent = `
     .tooltip {
@@ -396,6 +466,12 @@ style.textContent = `
     /* Destaque ao passar mouse nas linhas */
     .lancamentos-table tbody tr.hovering {
         background-color: #f0f8ff !important;
+    }
+    
+    /* Estilo para indicador de transferência */
+    .tipo-transferencia {
+        background-color: #17a2b810;
+        color: #17a2b8;
     }
 `;
 document.head.appendChild(style);

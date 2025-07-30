@@ -28,16 +28,40 @@ def home():
     total_investimento = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Investimento').scalar() or 0
     
     # Buscar lançamentos do mês
+    # Para receitas: incluir receitas normais e transferências de entrada
     receitas = Lancamento.query.filter(
-        Lancamento.tipo == 'receita',
-        Lancamento.data_vencimento >= primeiro_dia,
-        Lancamento.data_vencimento <= ultimo_dia
+        db.or_(
+            db.and_(
+                Lancamento.tipo == 'receita',
+                Lancamento.data_vencimento >= primeiro_dia,
+                Lancamento.data_vencimento <= ultimo_dia
+            ),
+            db.and_(
+                Lancamento.tipo == 'transferencia',
+                Lancamento.conta_destino_id.isnot(None),  # Transferências de entrada têm conta_destino_id
+                Lancamento.conta_destino_id < Lancamento.conta_id,  # Para evitar duplicatas
+                Lancamento.data_vencimento >= primeiro_dia,
+                Lancamento.data_vencimento <= ultimo_dia
+            )
+        )
     ).order_by(Lancamento.data_vencimento).all()
     
+    # Para despesas: incluir despesas normais e transferências de saída
     despesas = Lancamento.query.filter(
-        Lancamento.tipo == 'despesa',
-        Lancamento.data_vencimento >= primeiro_dia,
-        Lancamento.data_vencimento <= ultimo_dia
+        db.or_(
+            db.and_(
+                Lancamento.tipo == 'despesa',
+                Lancamento.data_vencimento >= primeiro_dia,
+                Lancamento.data_vencimento <= ultimo_dia
+            ),
+            db.and_(
+                Lancamento.tipo == 'transferencia',
+                Lancamento.conta_destino_id.isnot(None),  # Transferências de saída têm conta_destino_id
+                Lancamento.conta_id < Lancamento.conta_destino_id,  # Para evitar duplicatas
+                Lancamento.data_vencimento >= primeiro_dia,
+                Lancamento.data_vencimento <= ultimo_dia
+            )
+        )
     ).order_by(Lancamento.data_vencimento).all()
     
     # Calcular totais de receitas e despesas

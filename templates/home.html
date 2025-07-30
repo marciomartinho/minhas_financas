@@ -129,9 +129,16 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
-                                        {{ lancamento.categoria.nome }}
-                                    </span>
+                                    {% if lancamento.tipo == 'transferencia' %}
+                                        <span class="categoria-mini" style="color: #17a2b8;">
+                                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">swap_horiz</span>
+                                            Transferência
+                                        </span>
+                                    {% else %}
+                                        <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                            {{ lancamento.categoria.nome }}
+                                        </span>
+                                    {% endif %}
                                 </td>
                                 <td class="col-valor receita">R$ {{ lancamento.valor|moeda }}</td>
                                 <td class="col-acoes">

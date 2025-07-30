@@ -20,8 +20,7 @@ def listar_lancamentos():
     # Buscar lançamentos recentes (últimos 30 dias) - ordenados do mais recente para o mais antigo
     data_limite = date.today() - timedelta(days=30)
     lancamentos = Lancamento.query.filter(
-        Lancamento.data_vencimento >= data_limite,
-        Lancamento.tipo.in_(['despesa', 'receita'])
+        Lancamento.data_vencimento >= data_limite
     ).order_by(Lancamento.data_criacao.desc()).all()
     
     return render_template('lancamentos.html', 
@@ -30,6 +29,101 @@ def listar_lancamentos():
                          categorias_receita=categorias_receita,
                          lancamentos=lancamentos,
                          today=date.today())
+
+@lancamentos_bp.route('/lancamentos/transferencia', methods=['POST'])
+def criar_transferencia():
+    """Criar nova transferência entre contas"""
+    try:
+        # Capturar dados do formulário
+        descricao = request.form.get('descricao')
+        valor = Decimal(request.form.get('valor', '0'))
+        conta_origem_id = int(request.form.get('conta_origem_id'))
+        conta_destino_id = int(request.form.get('conta_destino_id'))
+        data_vencimento = datetime.strptime(request.form.get('data_vencimento'), '%Y-%m-%d').date()
+        
+        # Validações básicas
+        if valor <= 0:
+            flash('O valor deve ser maior que zero!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        if conta_origem_id == conta_destino_id:
+            flash('A conta de origem e destino devem ser diferentes!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        # Buscar contas
+        conta_origem = Conta.query.get(conta_origem_id)
+        conta_destino = Conta.query.get(conta_destino_id)
+        
+        if not conta_origem or not conta_destino:
+            flash('Conta inválida selecionada!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        # Verificar saldo da conta de origem
+        if conta_origem.saldo_atual < valor:
+            flash(f'Saldo insuficiente na conta {conta_origem.nome}!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        # Buscar ou criar categoria "Transferência"
+        categoria_transferencia = Categoria.query.filter_by(nome='Transferência').first()
+        if not categoria_transferencia:
+            # Criar categoria se não existir
+            categoria_transferencia = Categoria(
+                nome='Transferência',
+                tipo='Despesa',
+                icone='swap_horiz',
+                cor='#17a2b8',
+                ativa=True
+            )
+            db.session.add(categoria_transferencia)
+            db.session.flush()
+        
+        # Criar lançamento de saída (despesa na conta origem)
+        lancamento_saida = Lancamento(
+            descricao=f"{descricao} - para {conta_destino.nome}",
+            valor=valor,
+            tipo='transferencia',
+            conta_id=conta_origem_id,
+            conta_destino_id=conta_destino_id,
+            categoria_id=categoria_transferencia.id,
+            data_vencimento=data_vencimento,
+            data_pagamento=data_vencimento,  # Transferência é realizada imediatamente
+            status='pago',  # Status sempre pago para transferências
+            recorrencia='unica',
+            tag='Transferência'
+        )
+        
+        # Criar lançamento de entrada (receita na conta destino)
+        lancamento_entrada = Lancamento(
+            descricao=f"{descricao} - de {conta_origem.nome}",
+            valor=valor,
+            tipo='transferencia',
+            conta_id=conta_destino_id,
+            conta_destino_id=conta_origem_id,  # Inverter para rastreabilidade
+            categoria_id=categoria_transferencia.id,
+            data_vencimento=data_vencimento,
+            data_pagamento=data_vencimento,
+            status='pago',
+            recorrencia='unica',
+            tag='Transferência'
+        )
+        
+        # Atualizar saldos das contas
+        conta_origem.saldo_atual -= valor
+        conta_destino.saldo_atual += valor
+        
+        # Salvar tudo
+        db.session.add(lancamento_saida)
+        db.session.add(lancamento_entrada)
+        db.session.commit()
+        
+        flash(f'Transferência de R$ {valor:,.2f} realizada com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao criar transferência: {e}")
+        flash('Erro ao realizar transferência. Tente novamente.', 'error')
+    
+    return redirect(url_for('lancamentos.listar_lancamentos'))
 
 @lancamentos_bp.route('/lancamentos/despesa', methods=['POST'])
 def criar_despesa():
@@ -354,8 +448,30 @@ def excluir_lancamento(id):
             conta = lancamento.conta
             if lancamento.tipo == 'receita':
                 conta.saldo_atual -= lancamento.valor
-            else:  # despesa
+            elif lancamento.tipo == 'despesa':
                 conta.saldo_atual += lancamento.valor
+            elif lancamento.tipo == 'transferencia':
+                # Para transferências, reverter ambas as contas
+                if lancamento.conta_destino_id:
+                    # Este é o lançamento de saída
+                    conta.saldo_atual += lancamento.valor
+                    conta_destino = Conta.query.get(lancamento.conta_destino_id)
+                    if conta_destino:
+                        conta_destino.saldo_atual -= lancamento.valor
+                else:
+                    # Este é o lançamento de entrada - buscar o par
+                    lancamento_par = Lancamento.query.filter_by(
+                        tipo='transferencia',
+                        data_vencimento=lancamento.data_vencimento,
+                        valor=lancamento.valor,
+                        conta_destino_id=lancamento.conta_id
+                    ).first()
+                    if lancamento_par:
+                        db.session.delete(lancamento_par)
+                        conta_origem = Conta.query.get(lancamento_par.conta_id)
+                        if conta_origem:
+                            conta_origem.saldo_atual += lancamento.valor
+                    conta.saldo_atual -= lancamento.valor
         
         # Se for um lançamento pai com recorrência, perguntar se quer excluir todos
         excluir_todos = request.form.get('excluir_todos') == 'true'
