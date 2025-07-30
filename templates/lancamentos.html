@@ -27,7 +27,15 @@
     <!-- Seletor de Tipo -->
     <div class="tipo-selector">
         <label class="tipo-option active">
-            <input type="radio" name="tipo_lancamento" value="despesa" checked>
+            <input type="radio" name="tipo_lancamento" value="cartao" checked>
+            <span class="tipo-icon">
+                <span class="material-symbols-outlined">credit_card</span>
+            </span>
+            <span class="tipo-label">Cartão</span>
+        </label>
+        
+        <label class="tipo-option">
+            <input type="radio" name="tipo_lancamento" value="despesa">
             <span class="tipo-icon">
                 <span class="material-symbols-outlined">trending_down</span>
             </span>
@@ -43,14 +51,6 @@
         </label>
         
         <label class="tipo-option">
-            <input type="radio" name="tipo_lancamento" value="cartao">
-            <span class="tipo-icon">
-                <span class="material-symbols-outlined">credit_card</span>
-            </span>
-            <span class="tipo-label">Cartão</span>
-        </label>
-        
-        <label class="tipo-option">
             <input type="radio" name="tipo_lancamento" value="transferencia">
             <span class="tipo-icon">
                 <span class="material-symbols-outlined">swap_horiz</span>
@@ -60,7 +60,7 @@
     </div>
     
     <!-- Formulário de Despesa/Receita -->
-    <form id="formLancamento" action="{{ url_for('lancamentos.criar_despesa') }}" method="POST" class="lancamento-form">
+    <form id="formLancamento" action="{{ url_for('lancamentos.criar_despesa_cartao') }}" method="POST" class="lancamento-form">
         <!-- Campos comuns -->
         <div class="form-row campos-comuns">
             <div class="form-group">
@@ -74,7 +74,7 @@
             </div>
             
             <div class="form-group form-group-small">
-                <label for="data_vencimento" id="label_data_vencimento">Vencimento</label>
+                <label for="data_vencimento" id="label_data_vencimento">Data da Compra</label>
                 <input type="date" id="data_vencimento" name="data_vencimento" value="{{ today }}" required>
             </div>
         </div>
@@ -102,12 +102,12 @@
             </div>
         </div>
         
-        <!-- Campos de cartão (inicialmente ocultos) -->
-        <div class="campos-cartao" style="display: none;">
+        <!-- Campos de cartão (visíveis por padrão) -->
+        <div class="campos-cartao">
             <div class="form-row">
                 <div class="form-group">
                     <label for="cartao_id">Cartão</label>
-                    <select id="cartao_id" name="cartao_id">
+                    <select id="cartao_id" name="cartao_id" required>
                         <option value="">Selecione...</option>
                         {% for cartao in cartoes %}
                             <option value="{{ cartao.id }}">{{ cartao.nome }} (Venc: dia {{ cartao.dia_vencimento }})</option>
@@ -117,7 +117,7 @@
                 
                 <div class="form-group">
                     <label for="mes_inicial">Mês Inicial no Extrato</label>
-                    <input type="month" id="mes_inicial" name="mes_inicial" value="{{ today.strftime('%Y-%m') }}">
+                    <input type="month" id="mes_inicial" name="mes_inicial" value="{{ today.strftime('%Y-%m') }}" required>
                 </div>
             </div>
         </div>
@@ -149,9 +149,9 @@
                     </select>
                 </div>
                 
-                <div class="form-group campo-conta">
+                <div class="form-group campo-conta" style="display: none;">
                     <label for="conta_id">Conta</label>
-                    <select id="conta_id" name="conta_id" required>
+                    <select id="conta_id" name="conta_id">
                         <option value="">Selecione...</option>
                         {% for conta in contas %}
                             <option value="{{ conta.id }}">{{ conta.nome }}</option>

@@ -109,66 +109,46 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-<tbody>
-    {% for lancamento in despesas %}
-        <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
-            <td class="col-status">
-                {% if lancamento.tipo != 'fatura_cartao' %}
-                    <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
-                            onclick="togglePagamento({{ lancamento.id }})"
-                            title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como pago' }}">
-                        <span class="material-symbols-outlined">
-                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
-                        </span>
-                    </button>
-                {% else %}
-                    <!-- Para faturas de cartão, mostrar status diferente -->
-                    <span class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}"
-                          title="{{ 'Fatura paga' if lancamento.status == 'pago' else 'Fatura pendente' }}">
-                        <span class="material-symbols-outlined">
-                            {{ 'check_circle' if lancamento.status == 'pago' else 'credit_card' }}
-                        </span>
-                    </span>
-                {% endif %}
-            </td>
-            <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
-            <td>
-                {{ lancamento.descricao }}
-                {% if lancamento.tag %}
-                    <span class="tag-mini">{{ lancamento.tag }}</span>
-                {% endif %}
-            </td>
-            <td>
-                <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
-                    {{ lancamento.categoria.nome }}
-                </span>
-            </td>
-            <td class="col-valor despesa">R$ {{ lancamento.valor|moeda }}</td>
-            <td class="col-acoes">
-                {% if lancamento.tipo != 'fatura_cartao' %}
-                    <button class="btn-icon-mini btn-edit" 
-                            onclick="editarLancamento({{ lancamento.id }})"
-                            title="Editar">
-                        <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button class="btn-icon-mini btn-delete" 
-                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
-                            title="Excluir">
-                        <span class="material-symbols-outlined">delete</span>
-                    </button>
-                {% else %}
-                    <!-- Para faturas, mostrar link para o extrato -->
-                    <a href="{{ url_for('main.extrato_cartao', mes=mes_selecionado, ano=ano_selecionado, cartao_id=lancamento.cartao_id) }}" 
-                       class="btn-icon-mini btn-view" 
-                       title="Ver extrato completo"
-                       style="color: #6f42c1;">
-                        <span class="material-symbols-outlined">receipt_long</span>
-                    </a>
-                {% endif %}
-            </td>
-        </tr>
-    {% endfor %}
-</tbody>
+                    <tbody>
+                        {% for lancamento in receitas %}
+                            <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
+                                <td class="col-status">
+                                    <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
+                                            onclick="togglePagamento({{ lancamento.id }})"
+                                            title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como pago' }}">
+                                        <span class="material-symbols-outlined">
+                                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                        </span>
+                                    </button>
+                                </td>
+                                <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ lancamento.descricao }}
+                                    {% if lancamento.tag %}
+                                        <span class="tag-mini">{{ lancamento.tag }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                        {{ lancamento.categoria.nome }}
+                                    </span>
+                                </td>
+                                <td class="col-valor receita">R$ {{ lancamento.valor|moeda }}</td>
+                                <td class="col-acoes">
+                                    <button class="btn-icon-mini btn-edit" 
+                                            onclick="editarLancamento({{ lancamento.id }})"
+                                            title="Editar">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button class="btn-icon-mini btn-delete" 
+                                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                            title="Excluir">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
         {% else %}
@@ -205,13 +185,23 @@
                         {% for lancamento in despesas %}
                             <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
                                 <td class="col-status">
-                                    <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
-                                            onclick="togglePagamento({{ lancamento.id }})"
-                                            title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como pago' }}">
-                                        <span class="material-symbols-outlined">
-                                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                    {% if lancamento.tipo != 'fatura_cartao' %}
+                                        <button class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}" 
+                                                onclick="togglePagamento({{ lancamento.id }})"
+                                                title="{{ 'Marcar como pendente' if lancamento.status == 'pago' else 'Marcar como pago' }}">
+                                            <span class="material-symbols-outlined">
+                                                {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                            </span>
+                                        </button>
+                                    {% else %}
+                                        <!-- Para faturas de cartão, mostrar status diferente -->
+                                        <span class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}"
+                                              title="{{ 'Fatura paga' if lancamento.status == 'pago' else 'Fatura pendente' }}">
+                                            <span class="material-symbols-outlined">
+                                                {{ 'check_circle' if lancamento.status == 'pago' else 'credit_card' }}
+                                            </span>
                                         </span>
-                                    </button>
+                                    {% endif %}
                                 </td>
                                 <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
                                 <td>
@@ -227,16 +217,34 @@
                                 </td>
                                 <td class="col-valor despesa">R$ {{ lancamento.valor|moeda }}</td>
                                 <td class="col-acoes">
-                                    <button class="btn-icon-mini btn-edit" 
-                                            onclick="editarLancamento({{ lancamento.id }})"
-                                            title="Editar">
-                                        <span class="material-symbols-outlined">edit</span>
-                                    </button>
-                                    <button class="btn-icon-mini btn-delete" 
-                                            onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
-                                            title="Excluir">
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </button>
+                                    {% if lancamento.tipo != 'fatura_cartao' %}
+                                        <button class="btn-icon-mini btn-edit" 
+                                                onclick="editarLancamento({{ lancamento.id }})"
+                                                title="Editar">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="btn-icon-mini btn-delete" 
+                                                onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                                title="Excluir">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    {% else %}
+                                        <!-- Para faturas, mostrar link para o extrato -->
+                                        <a href="{{ url_for('main.extrato_cartao', mes=mes_selecionado, ano=ano_selecionado, cartao_id=lancamento.cartao_id) }}" 
+                                           class="btn-icon-mini btn-view" 
+                                           title="Ver extrato completo"
+                                           style="color: #6f42c1;">
+                                            <span class="material-symbols-outlined">receipt_long</span>
+                                        </a>
+                                        {% if lancamento.status != 'pago' %}
+                                            <button class="btn-icon-mini btn-pay" 
+                                                    onclick="marcarFaturaPaga({{ lancamento.cartao_id }}, '{{ lancamento.cartao.nome }}', {{ lancamento.valor }}, '{{ lancamento.data_vencimento }}')"
+                                                    title="Pagar fatura"
+                                                    style="color: #28a745;">
+                                                <span class="material-symbols-outlined">payment</span>
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

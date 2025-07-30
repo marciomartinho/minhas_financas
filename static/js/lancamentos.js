@@ -2,7 +2,7 @@
 
 // Variáveis globais
 let categoriasSelecionadas = {};
-let tipoAtual = 'despesa';
+let tipoAtual = 'cartao';
 
 // Função para alternar tipo de lançamento
 function alternarTipoLancamento(tipo) {
@@ -262,6 +262,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const hojeFormatado = hoje.toISOString().split('T')[0];
         dataInput.value = hojeFormatado;
     }
+    
+    // Inicializar com cartão selecionado
+    alternarTipoLancamento('cartao');
     
     // Event listeners para tipo de lançamento
     const tipoRadios = document.querySelectorAll('input[name="tipo_lancamento"]');
