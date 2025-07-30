@@ -64,7 +64,7 @@ def create_app():
         
         app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
-        app.register_blueprint(categorias_bp)
+        app.register_blueprint(categorias_bp, url_prefix='/categorias')
         app.register_blueprint(cartoes_bp)
         app.register_blueprint(lancamentos_bp)
 

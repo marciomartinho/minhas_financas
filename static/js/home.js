@@ -3,8 +3,6 @@
 // Variáveis globais
 let lancamentoIdExcluir = null;
 let lancamentoIdEditar = null;
-let categoriasDespesa = [];
-let categoriasReceita = [];
 
 // Função para alternar status de pagamento
 function togglePagamento(id) {
@@ -53,6 +51,9 @@ async function editarLancamento(id) {
     try {
         // Buscar dados do lançamento
         const response = await fetch(`/lancamentos/${id}/editar`);
+        if (!response.ok) {
+            throw new Error('Erro ao buscar dados do lançamento');
+        }
         const data = await response.json();
         
         lancamentoIdEditar = id;
@@ -64,33 +65,42 @@ async function editarLancamento(id) {
         document.getElementById('edit_conta').value = data.conta_id;
         document.getElementById('edit_tag').value = data.tag;
         
-        // Carregar categorias do tipo correto
+        // Limpar e carregar categorias do tipo correto
         const categoriaSelect = document.getElementById('edit_categoria');
-        categoriaSelect.innerHTML = '<option value="">Selecione...</option>';
+        categoriaSelect.innerHTML = '<option value="">Carregando categorias...</option>';
         
-        if (data.tipo === 'despesa') {
-            await carregarCategoriasDespesa();
-            categoriasDespesa.forEach(cat => {
+        try {
+            const tipoCategoria = data.tipo === 'despesa' ? 'Despesa' : 'Receita';
+            const respCat = await fetch(`/categorias/api/categorias?tipo=${tipoCategoria}`);
+            
+            if (!respCat.ok) {
+                throw new Error('Erro ao buscar categorias');
+            }
+            
+            const categorias = await respCat.json();
+            
+            // Preencher select de categorias
+            categoriaSelect.innerHTML = '<option value="">Selecione...</option>';
+            categorias.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat.id;
                 option.textContent = cat.nome;
+                if (cat.id == data.categoria_id) {  // Usar == ao invés de === para comparar números
+                    option.selected = true;
+                }
                 categoriaSelect.appendChild(option);
             });
-        } else {
-            await carregarCategoriasReceita();
-            categoriasReceita.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id;
-                option.textContent = cat.nome;
-                categoriaSelect.appendChild(option);
-            });
-        }
-        
-        categoriaSelect.value = data.categoria_id;
-        
-        // Carregar subcategorias
-        if (data.categoria_id) {
-            await carregarSubcategorias(data.categoria_id, data.subcategoria_id);
+            
+            // Carregar subcategorias se houver categoria selecionada
+            if (data.categoria_id) {
+                await carregarSubcategorias(data.categoria_id, data.subcategoria_id);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao carregar categorias:', error);
+            categoriaSelect.innerHTML = '<option value="">Erro ao carregar categorias</option>';
+            alert('Erro ao carregar categorias. Por favor, tente novamente.');
+            return;
         }
         
         // Mostrar opções de recorrência se aplicável
@@ -109,7 +119,7 @@ async function editarLancamento(id) {
         
     } catch (error) {
         console.error('Erro ao carregar lançamento:', error);
-        alert('Erro ao carregar dados do lançamento.');
+        alert('Erro ao carregar dados do lançamento. Por favor, tente novamente.');
     }
 }
 
@@ -117,30 +127,6 @@ async function editarLancamento(id) {
 function fecharModalEdicao() {
     document.getElementById('modalEdicao').style.display = 'none';
     lancamentoIdEditar = null;
-}
-
-// Função para carregar categorias de despesa
-async function carregarCategoriasDespesa() {
-    if (categoriasDespesa.length === 0) {
-        try {
-            const response = await fetch('/api/categorias?tipo=Despesa');
-            categoriasDespesa = await response.json();
-        } catch (error) {
-            console.error('Erro ao carregar categorias de despesa:', error);
-        }
-    }
-}
-
-// Função para carregar categorias de receita
-async function carregarCategoriasReceita() {
-    if (categoriasReceita.length === 0) {
-        try {
-            const response = await fetch('/api/categorias?tipo=Receita');
-            categoriasReceita = await response.json();
-        } catch (error) {
-            console.error('Erro ao carregar categorias de receita:', error);
-        }
-    }
 }
 
 // Função para carregar subcategorias
@@ -157,7 +143,11 @@ async function carregarSubcategorias(categoriaId, subcategoriaIdSelecionada = nu
         subcategoriaSelect.innerHTML = '<option value="">Carregando...</option>';
         
         // Fazer requisição
-        const response = await fetch(`/api/categorias/${categoriaId}/subcategorias`);
+        const response = await fetch(`/categorias/api/categorias/${categoriaId}/subcategorias`);
+        if (!response.ok) {
+            throw new Error('Erro ao buscar subcategorias');
+        }
+        
         const subcategorias = await response.json();
         
         // Limpar e preencher select
@@ -167,13 +157,11 @@ async function carregarSubcategorias(categoriaId, subcategoriaIdSelecionada = nu
             const option = document.createElement('option');
             option.value = sub.id;
             option.textContent = sub.nome;
+            if (sub.id == subcategoriaIdSelecionada) {  // Usar == ao invés de ===
+                option.selected = true;
+            }
             subcategoriaSelect.appendChild(option);
         });
-        
-        // Selecionar subcategoria se fornecida
-        if (subcategoriaIdSelecionada) {
-            subcategoriaSelect.value = subcategoriaIdSelecionada;
-        }
         
     } catch (error) {
         console.error('Erro ao carregar subcategorias:', error);

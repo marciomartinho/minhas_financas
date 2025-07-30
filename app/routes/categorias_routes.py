@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 # Criar o Blueprint
 categorias_bp = Blueprint('categorias', __name__)
 
-@categorias_bp.route('/categorias', methods=['GET', 'POST'])
+@categorias_bp.route('/', methods=['GET', 'POST'])
 def pagina_categorias():
     if request.method == 'POST':
         # Processar o formulário
@@ -46,7 +46,7 @@ def pagina_categorias():
     categorias = Categoria.query.order_by(Categoria.tipo, Categoria.nome).all()
     return render_template('categorias.html', categorias=categorias)
 
-@categorias_bp.route('/categorias/<int:id>/editar', methods=['POST'])
+@categorias_bp.route('/<int:id>/editar', methods=['POST'])
 def editar_categoria(id):
     categoria = Categoria.query.get_or_404(id)
     
@@ -68,7 +68,7 @@ def editar_categoria(id):
     
     return redirect(url_for('categorias.pagina_categorias'))
 
-@categorias_bp.route('/categorias/<int:id>/excluir', methods=['POST'])
+@categorias_bp.route('/<int:id>/excluir', methods=['POST'])
 def excluir_categoria(id):
     categoria = Categoria.query.get_or_404(id)
     
@@ -84,7 +84,7 @@ def excluir_categoria(id):
     return redirect(url_for('categorias.pagina_categorias'))
 
 # Rotas para Subcategorias
-@categorias_bp.route('/categorias/<int:categoria_id>/subcategorias', methods=['POST'])
+@categorias_bp.route('/<int:categoria_id>/subcategorias', methods=['POST'])
 def adicionar_subcategoria(categoria_id):
     categoria = Categoria.query.get_or_404(categoria_id)
     nome = request.form.get('nome')
@@ -164,3 +164,21 @@ def obter_subcategorias(categoria_id):
     } for sub in categoria.subcategorias if sub.ativa]
     
     return jsonify(subcategorias)
+
+# Rota para buscar categorias por tipo (AJAX)
+@categorias_bp.route('/api/categorias')
+def obter_categorias():
+    tipo = request.args.get('tipo')
+    
+    if tipo:
+        categorias = Categoria.query.filter_by(tipo=tipo, ativa=True).order_by(Categoria.nome).all()
+    else:
+        categorias = Categoria.query.filter_by(ativa=True).order_by(Categoria.nome).all()
+    
+    return jsonify([{
+        'id': cat.id,
+        'nome': cat.nome,
+        'tipo': cat.tipo,
+        'icone': cat.icone,
+        'cor': cat.cor
+    } for cat in categorias])
