@@ -1,0 +1,108 @@
+/* Importa a fonte Roboto do Google Fonts para um visual mais limpo */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/* --- Configurações Gerais --- */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f7f6; /* Um cinza bem claro para o fundo */
+    margin: 0;
+    /* Deixa um espaço no topo para o cabeçalho que será fixo */
+    padding-top: 80px; 
+}
+
+main {
+    /* Espaçamento interno para o conteúdo principal de cada página */
+    padding: 40px;
+}
+
+
+/* --- Cabeçalho e Navegação --- */
+header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
+    padding: 0 40px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Alinha logo à esquerda e nav à direita */
+    position: fixed; /* Fixa o menu no topo da página */
+    top: 0;
+    width: calc(100% - 80px); /* Ocupa a largura toda menos o padding */
+    z-index: 1000; /* Garante que o menu fique acima de outros elementos */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #2c3e50; /* Um cinza escuro para o texto */
+}
+
+.logo .material-symbols-outlined {
+    font-size: 36px;
+    color: #28a745; /* Verde característico do sistema */
+    margin-right: 10px;
+}
+
+.logo h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+}
+
+nav ul li {
+    position: relative; /* Necessário para o posicionamento do dropdown */
+    margin-left: 30px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 10px 5px;
+    transition: color 0.3s ease; /* Efeito suave na troca de cor */
+}
+
+nav ul li a:hover {
+    color: #28a745; /* Muda para a cor verde ao passar o mouse */
+}
+
+
+/* --- Estilos do Menu Dropdown --- */
+.dropdown-content {
+    display: none; /* Escondido por padrão */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 8px;
+    padding: 10px 0;
+    margin-top: 10px;
+}
+
+.dropdown-content a {
+    color: #333;
+    padding: 12px 20px;
+    text-decoration: none;
+    display: block;
+    font-size: 15px;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+/* Mostra o dropdown quando o mouse passa por cima do item de menu */
+.dropdown:hover .dropdown-content {
+    display: block;
+}

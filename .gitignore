@@ -1,0 +1,14 @@
+# .gitignore
+
+# Ignorar o arquivo de segredos
+.env
+
+# Ignorar a pasta do ambiente virtual
+venv/
+__pycache__/
+
+# Ignorar arquivos de cache do Python
+*.pyc
+
+# Ignorar arquivos de banco de dados SQLite (caso usemos no futuro)
+*.sqlite3
