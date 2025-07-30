@@ -78,6 +78,40 @@ class Cartao(db.Model):
 
     def __repr__(self):
         return f'<Cartao {self.nome} - Conta: {self.conta.nome}>'
+    
+# Mapeamento da tabela de Lançamentos
+class Lancamento(db.Model):
+    __tablename__ = 'lancamentos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(255), nullable=False)
+    valor = db.Column(db.Numeric(10, 2), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # despesa, receita, cartao_credito, transferencia
+    conta_id = db.Column(db.Integer, db.ForeignKey('contas.id'), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    subcategoria_id = db.Column(db.Integer, db.ForeignKey('subcategorias.id'), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='pendente')  # pendente, pago, cancelado
+    recorrencia = db.Column(db.String(20), nullable=False, default='unica')  # unica, mensal, anual, semanal, quinzenal, parcelada
+    data_criacao = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    cartao_id = db.Column(db.Integer, db.ForeignKey('cartoes.id'), nullable=True)
+    conta_destino_id = db.Column(db.Integer, db.ForeignKey('contas.id'), nullable=True)
+    data_vencimento = db.Column(db.Date, nullable=False)
+    data_pagamento = db.Column(db.Date, nullable=True)
+    numero_parcela = db.Column(db.Integer, nullable=True)
+    total_parcelas = db.Column(db.Integer, nullable=True)
+    lancamento_pai_id = db.Column(db.Integer, db.ForeignKey('lancamentos.id'), nullable=True)
+    tag = db.Column(db.String(50), nullable=True)  # Campo para tags/etiquetas
+    
+    # Relacionamentos
+    conta = db.relationship('Conta', foreign_keys=[conta_id], backref='lancamentos')
+    conta_destino = db.relationship('Conta', foreign_keys=[conta_destino_id])
+    categoria = db.relationship('Categoria', backref='lancamentos')
+    subcategoria = db.relationship('Subcategoria', backref='lancamentos')
+    cartao = db.relationship('Cartao', backref='lancamentos')
+    lancamento_pai = db.relationship('Lancamento', remote_side=[id], backref='parcelas')
+
+    def __repr__(self):
+        return f'<Lancamento {self.descricao} - R$ {self.valor}>'
 
 
 # Você pode adicionar outras classes aqui no futuro (Ex: Lancamento, etc.)

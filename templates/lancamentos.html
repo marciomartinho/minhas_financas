@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Lançamentos - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lancamentos.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Formulário de Lançamento -->
+<div class="lancamento-form-card">
+    <div class="form-header">
+        <h2>Novo Lançamento</h2>
+    </div>
+    
+    <!-- Seletor de Tipo -->
+    <div class="tipo-selector">
+        <label class="tipo-option active">
+            <input type="radio" name="tipo_lancamento" value="despesa" checked>
+            <span class="tipo-icon">
+                <span class="material-symbols-outlined">trending_down</span>
+            </span>
+            <span class="tipo-label">Despesa</span>
+        </label>
+        
+        <label class="tipo-option">
+            <input type="radio" name="tipo_lancamento" value="receita">
+            <span class="tipo-icon">
+                <span class="material-symbols-outlined">trending_up</span>
+            </span>
+            <span class="tipo-label">Receita</span>
+        </label>
+        
+        <label class="tipo-option disabled">
+            <input type="radio" name="tipo_lancamento" value="cartao" disabled>
+            <span class="tipo-icon">
+                <span class="material-symbols-outlined">credit_card</span>
+            </span>
+            <span class="tipo-label">Cartão</span>
+        </label>
+        
+        <label class="tipo-option disabled">
+            <input type="radio" name="tipo_lancamento" value="transferencia" disabled>
+            <span class="tipo-icon">
+                <span class="material-symbols-outlined">swap_horiz</span>
+            </span>
+            <span class="tipo-label">Transferência</span>
+        </label>
+    </div>
+    
+    <!-- Formulário de Despesa/Receita -->
+    <form id="formLancamento" action="{{ url_for('lancamentos.criar_despesa') }}" method="POST" class="lancamento-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                <input type="text" id="descricao" name="descricao" placeholder="Ex: Conta de luz, Supermercado" required autofocus>
+            </div>
+            
+            <div class="form-group form-group-small">
+                <label for="valor">Valor (R$)</label>
+                <input type="text" id="valor" name="valor" placeholder="0,00" required>
+            </div>
+            
+            <div class="form-group form-group-small">
+                <label for="data_vencimento">Vencimento</label>
+                <input type="date" id="data_vencimento" name="data_vencimento" value="{{ today }}" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="categoria_id">Categoria</label>
+                <select id="categoria_id" name="categoria_id" required>
+                    <option value="">Selecione...</option>
+                    <optgroup label="Despesas" class="categoria-despesa">
+                        {% for categoria in categorias_despesa %}
+                            <option value="{{ categoria.id }}" data-tipo="despesa">{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Receitas" class="categoria-receita" style="display: none;">
+                        {% for categoria in categorias_receita %}
+                            <option value="{{ categoria.id }}" data-tipo="receita">{{ categoria.nome }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="subcategoria_id">Subcategoria</label>
+                <select id="subcategoria_id" name="subcategoria_id">
+                    <option value="">Selecione primeiro uma categoria</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="conta_id">Conta</label>
+                <select id="conta_id" name="conta_id" required>
+                    <option value="">Selecione...</option>
+                    {% for conta in contas %}
+                        <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="tag">Tag</label>
+                <input type="text" id="tag" name="tag" placeholder="Ex: Viagem, Projeto X" maxlength="50">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="recorrencia">Recorrência</label>
+                <select id="recorrencia" name="recorrencia">
+                    <option value="unica">Única vez</option>
+                    <option value="mensal">Mensal</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="quinzenal">Quinzenal</option>
+                    <option value="anual">Anual</option>
+                    <option value="parcelada">Parcelada</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="parcelas-group" style="display: none;">
+                <label for="num_parcelas">Número de Parcelas</label>
+                <input type="number" id="num_parcelas" name="num_parcelas" min="2" max="48" placeholder="2">
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                Salvar Lançamento
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Lançamentos -->
+<div class="lancamentos-grid-container">
+    <div class="grid-header">
+        <h2>Lançamentos Recentes</h2>
+        <div class="grid-filters">
+            <span class="filter-info">Últimos 30 dias</span>
+        </div>
+    </div>
+    
+    {% if lancamentos %}
+        <div class="lancamentos-table-wrapper">
+            <table class="lancamentos-table">
+                <thead>
+                    <tr>
+                        <th class="col-data">Vencimento</th>
+                        <th class="col-descricao">Descrição</th>
+                        <th class="col-categoria">Categoria</th>
+                        <th class="col-conta">Conta</th>
+                        <th class="col-tag">Tag</th>
+                        <th class="col-valor">Valor</th>
+                        <th class="col-acoes">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lancamento in lancamentos %}
+                        <tr class="{{ 'row-receita' if lancamento.tipo == 'receita' else 'row-despesa' }}">
+                            <td class="col-data">
+                                {{ lancamento.data_vencimento.strftime('%d/%m/%Y') }}
+                                {% if lancamento.data_vencimento < today and lancamento.status != 'pago' %}
+                                    <span class="badge-vencido">Vencido</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-descricao">
+                                <span class="tipo-indicator tipo-{{ lancamento.tipo }}">
+                                    <span class="material-symbols-outlined">
+                                        {{ 'trending_up' if lancamento.tipo == 'receita' else 'trending_down' }}
+                                    </span>
+                                </span>
+                                {{ lancamento.descricao }}
+                                {% if lancamento.recorrencia != 'unica' %}
+                                    <span class="badge-recorrencia">{{ lancamento.recorrencia }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-categoria">
+                                <span class="categoria-tag" style="background-color: {{ lancamento.categoria.cor }}20; color: {{ lancamento.categoria.cor }};">
+                                    <span class="material-symbols-outlined">{{ lancamento.categoria.icone }}</span>
+                                    {{ lancamento.categoria.nome }}
+                                </span>
+                                {% if lancamento.subcategoria %}
+                                    <span class="subcategoria-info">{{ lancamento.subcategoria.nome }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-conta">
+                                {{ lancamento.conta.nome }}
+                            </td>
+                            <td class="col-tag">
+                                {% if lancamento.tag %}
+                                    <span class="tag-badge">{{ lancamento.tag }}</span>
+                                {% else %}
+                                    <span class="tag-empty">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-valor">
+                                R$ {{ lancamento.valor|moeda }}
+                            </td>
+                            <td class="col-acoes">
+                                <button class="btn-icon btn-delete" 
+                                        onclick="confirmarExclusao({{ lancamento.id }}, '{{ lancamento.descricao }}', '{{ lancamento.recorrencia }}')"
+                                        title="Excluir">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <p>Nenhum lançamento encontrado nos últimos 30 dias.</p>
+            <p>Comece criando seu primeiro lançamento acima!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="modalExclusao" class="lancamento-modal">
+    <div class="lancamento-modal-content">
+        <div class="lancamento-modal-header modal-header-danger">
+            <h3>
+                <span class="material-symbols-outlined">warning</span>
+                Confirmar Exclusão
+            </h3>
+            <span class="lancamento-modal-close" onclick="fecharModalExclusao()">&times;</span>
+        </div>
+        <div class="lancamento-modal-body">
+            <div class="delete-warning-icon">
+                <span class="material-symbols-outlined">delete_forever</span>
+            </div>
+            <p class="delete-message">
+                Tem certeza que deseja excluir o lançamento <strong id="descricaoExcluir"></strong>?
+            </p>
+            
+            <div id="opcaoRecorrencia" style="display: none;">
+                <p class="delete-submessage">Este é um lançamento recorrente. O que deseja fazer?</p>
+                <div class="delete-options">
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="apenas_este" checked>
+                        <span>Excluir apenas este lançamento</span>
+                    </label>
+                    <label class="delete-option">
+                        <input type="radio" name="excluir_opcao" value="todos_futuros">
+                        <span>Excluir este e todos os futuros</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <form id="formExclusao" method="POST">
+            <input type="hidden" name="excluir_todos" id="excluir_todos" value="false">
+            <div class="lancamento-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalExclusao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <span class="material-symbols-outlined">delete</span>
+                    Confirmar Exclusão
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Passar a data de hoje para o JavaScript
+    const hoje = '{{ today }}';
+</script>
+<script src="{{ url_for('static', filename='js/lancamentos.js') }}"></script>
+{% endblock %}

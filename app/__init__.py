@@ -60,10 +60,12 @@ def create_app():
         from .routes.contas_routes import contas_bp
         from .routes.categorias_routes import categorias_bp
         from .routes.cartoes_routes import cartoes_bp
+        from .routes.lancamentos_routes import lancamentos_bp
         
         app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
         app.register_blueprint(categorias_bp)
         app.register_blueprint(cartoes_bp)
+        app.register_blueprint(lancamentos_bp)
 
     return app
