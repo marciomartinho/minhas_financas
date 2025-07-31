@@ -31,22 +31,27 @@ def home():
     total_corrente = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Corrente').scalar() or 0
     total_investimento = db.session.query(func.sum(Conta.saldo_atual)).filter(Conta.tipo_conta == 'Investimento').scalar() or 0
     
-    # Buscar lançamentos do mês
-    # Para receitas: apenas tipo = 'receita'
+    # IMPORTANTE: Buscar IDs das contas correntes para filtrar
+    ids_contas_corrente = [conta.id for conta in contas_corrente]
+    
+    # Buscar lançamentos do mês - APENAS DE CONTAS CORRENTES
+    # Para receitas: apenas tipo = 'receita' E conta_id em contas correntes
     receitas = Lancamento.query.filter(
         Lancamento.tipo == 'receita',
+        Lancamento.conta_id.in_(ids_contas_corrente),  # FILTRO ADICIONADO
         Lancamento.data_vencimento >= primeiro_dia,
         Lancamento.data_vencimento <= ultimo_dia
     ).order_by(Lancamento.data_vencimento).all()
     
-    # Para despesas: apenas tipo = 'despesa'
+    # Para despesas: apenas tipo = 'despesa' E conta_id em contas correntes
     despesas_query = Lancamento.query.filter(
         Lancamento.tipo == 'despesa',
+        Lancamento.conta_id.in_(ids_contas_corrente),  # FILTRO ADICIONADO
         Lancamento.data_vencimento >= primeiro_dia,
         Lancamento.data_vencimento <= ultimo_dia
     ).order_by(Lancamento.data_vencimento).all()
     
-    # Processar faturas de cartão
+    # Processar faturas de cartão (mantém lógica existente - cartões já são de contas correntes)
     cartoes = Cartao.query.filter_by(ativo=True).all()
     faturas_cartao = []
     

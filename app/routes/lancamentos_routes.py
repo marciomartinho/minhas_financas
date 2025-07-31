@@ -325,6 +325,25 @@ def criar_despesa():
             flash('O valor deve ser maior que zero!', 'error')
             return redirect(url_for('lancamentos.listar_lancamentos'))
         
+        # Verificar se a conta é de investimento
+        conta = Conta.query.get(conta_id)
+        if not conta:
+            flash('Conta inválida!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        # Debug para verificar o tipo da conta
+        print(f"Conta ID: {conta_id}, Tipo: {conta.tipo_conta}")
+        
+        # Se for conta de investimento, o status é sempre 'pago'
+        is_investimento = conta.tipo_conta and conta.tipo_conta.lower() == 'investimento'
+        status_lancamento = 'pago' if is_investimento else 'pendente'
+        data_pagamento = data_vencimento if is_investimento else None
+        
+        # Se for conta de investimento e status 'pago', atualizar saldo imediatamente
+        if is_investimento:
+            conta.saldo_atual -= valor
+            print(f"Atualizando saldo da conta de investimento. Novo saldo: {conta.saldo_atual}")
+        
         # Criar lançamentos baseado na recorrência
         if recorrencia == 'unica':
             # Lançamento único
@@ -336,7 +355,8 @@ def criar_despesa():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 tag=tag if tag else None
             )
@@ -367,7 +387,8 @@ def criar_despesa():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 numero_parcela=1,
                 total_parcelas=num_parcelas,
@@ -379,6 +400,8 @@ def criar_despesa():
             # Criar parcelas restantes
             for i in range(2, num_parcelas + 1):
                 data_parcela = data_vencimento + relativedelta(months=i-1)
+                data_pagamento_parcela = data_parcela if is_investimento else None
+                
                 parcela = Lancamento(
                     descricao=f"{descricao} ({i}/{num_parcelas})",
                     valor=valor_parcela,
@@ -387,7 +410,8 @@ def criar_despesa():
                     categoria_id=categoria_id,
                     subcategoria_id=subcategoria_id,
                     data_vencimento=data_parcela,
-                    status='pendente',
+                    data_pagamento=data_pagamento_parcela,
+                    status=status_lancamento,
                     recorrencia=recorrencia,
                     numero_parcela=i,
                     total_parcelas=num_parcelas,
@@ -395,6 +419,10 @@ def criar_despesa():
                     tag=tag if tag else None
                 )
                 db.session.add(parcela)
+                
+                # Se for conta de investimento, atualizar saldo para cada parcela
+                if is_investimento:
+                    conta.saldo_atual -= valor_parcela
                 
         else:
             # Lançamentos recorrentes (mensal, semanal, quinzenal, anual)
@@ -424,7 +452,8 @@ def criar_despesa():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 tag=tag if tag else None
             )
@@ -435,6 +464,8 @@ def criar_despesa():
             data_atual = data_vencimento
             for i in range(1, total_lancamentos):
                 data_atual = data_atual + incremento
+                data_pagamento_futura = data_atual if is_investimento else None
+                
                 lancamento = Lancamento(
                     descricao=descricao,
                     valor=valor,
@@ -443,15 +474,25 @@ def criar_despesa():
                     categoria_id=categoria_id,
                     subcategoria_id=subcategoria_id,
                     data_vencimento=data_atual,
-                    status='pendente',
+                    data_pagamento=data_pagamento_futura,
+                    status=status_lancamento,
                     recorrencia=recorrencia,
                     lancamento_pai_id=lancamento_pai.id,
                     tag=tag if tag else None
                 )
                 db.session.add(lancamento)
+                
+                # Se for conta de investimento, atualizar saldo para cada lançamento futuro
+                if is_investimento:
+                    conta.saldo_atual -= valor
         
         db.session.commit()
-        flash('Despesa cadastrada com sucesso!', 'success')
+        
+        # Mensagem de sucesso específica para investimentos
+        if is_investimento:
+            flash('Despesa cadastrada e marcada como paga (conta de investimento)!', 'success')
+        else:
+            flash('Despesa cadastrada com sucesso!', 'success')
         
     except Exception as e:
         db.session.rollback()
@@ -482,6 +523,25 @@ def criar_receita():
             flash('O valor deve ser maior que zero!', 'error')
             return redirect(url_for('lancamentos.listar_lancamentos'))
         
+        # Verificar se a conta é de investimento
+        conta = Conta.query.get(conta_id)
+        if not conta:
+            flash('Conta inválida!', 'error')
+            return redirect(url_for('lancamentos.listar_lancamentos'))
+        
+        # Debug para verificar o tipo da conta
+        print(f"Conta ID: {conta_id}, Tipo: {conta.tipo_conta}")
+        
+        # Se for conta de investimento, o status é sempre 'pago'
+        is_investimento = conta.tipo_conta and conta.tipo_conta.lower() == 'investimento'
+        status_lancamento = 'pago' if is_investimento else 'pendente'
+        data_pagamento = data_vencimento if is_investimento else None
+        
+        # Se for conta de investimento e status 'pago', atualizar saldo imediatamente
+        if is_investimento:
+            conta.saldo_atual += valor  # NOTA: Para receita, SOMA ao invés de subtrair
+            print(f"Atualizando saldo da conta de investimento. Novo saldo: {conta.saldo_atual}")
+        
         # Criar lançamentos baseado na recorrência (mesma lógica da despesa)
         if recorrencia == 'unica':
             # Lançamento único
@@ -493,7 +553,8 @@ def criar_receita():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 tag=tag if tag else None
             )
@@ -523,7 +584,8 @@ def criar_receita():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 numero_parcela=1,
                 total_parcelas=num_parcelas,
@@ -535,6 +597,8 @@ def criar_receita():
             # Criar parcelas restantes
             for i in range(2, num_parcelas + 1):
                 data_parcela = data_vencimento + relativedelta(months=i-1)
+                data_pagamento_parcela = data_parcela if is_investimento else None
+                
                 parcela = Lancamento(
                     descricao=f"{descricao} ({i}/{num_parcelas})",
                     valor=valor_parcela,
@@ -543,7 +607,8 @@ def criar_receita():
                     categoria_id=categoria_id,
                     subcategoria_id=subcategoria_id,
                     data_vencimento=data_parcela,
-                    status='pendente',
+                    data_pagamento=data_pagamento_parcela,
+                    status=status_lancamento,
                     recorrencia=recorrencia,
                     numero_parcela=i,
                     total_parcelas=num_parcelas,
@@ -551,6 +616,10 @@ def criar_receita():
                     tag=tag if tag else None
                 )
                 db.session.add(parcela)
+                
+                # Se for conta de investimento, atualizar saldo para cada parcela
+                if is_investimento:
+                    conta.saldo_atual += valor_parcela  # SOMA para receitas
                 
         else:
             # Lançamentos recorrentes
@@ -579,7 +648,8 @@ def criar_receita():
                 categoria_id=categoria_id,
                 subcategoria_id=subcategoria_id,
                 data_vencimento=data_vencimento,
-                status='pendente',
+                data_pagamento=data_pagamento,
+                status=status_lancamento,
                 recorrencia=recorrencia,
                 tag=tag if tag else None
             )
@@ -590,6 +660,8 @@ def criar_receita():
             data_atual = data_vencimento
             for i in range(1, total_lancamentos):
                 data_atual = data_atual + incremento
+                data_pagamento_futura = data_atual if is_investimento else None
+                
                 lancamento = Lancamento(
                     descricao=descricao,
                     valor=valor,
@@ -598,15 +670,25 @@ def criar_receita():
                     categoria_id=categoria_id,
                     subcategoria_id=subcategoria_id,
                     data_vencimento=data_atual,
-                    status='pendente',
+                    data_pagamento=data_pagamento_futura,
+                    status=status_lancamento,
                     recorrencia=recorrencia,
                     lancamento_pai_id=lancamento_pai.id,
                     tag=tag if tag else None
                 )
                 db.session.add(lancamento)
+                
+                # Se for conta de investimento, atualizar saldo para cada lançamento futuro
+                if is_investimento:
+                    conta.saldo_atual += valor  # SOMA para receitas
         
         db.session.commit()
-        flash('Receita cadastrada com sucesso!', 'success')
+        
+        # Mensagem de sucesso específica para investimentos
+        if is_investimento:
+            flash('Receita cadastrada e marcada como paga (conta de investimento)!', 'success')
+        else:
+            flash('Receita cadastrada com sucesso!', 'success')
         
     except Exception as e:
         db.session.rollback()
