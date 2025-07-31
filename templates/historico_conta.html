@@ -139,7 +139,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Dados para o gráfico
-    const dadosEvolucao = {{ dados_grafico|tojson }};
+    const dadosEvolucao = {{ dados_grafico|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/investimentos.js') }}"></script>
 {% endblock %}

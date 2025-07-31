@@ -205,7 +205,7 @@ def historico_conta(conta_id):
     
     # Buscar histórico
     historico = SaldoInvestimento.query.filter_by(conta_id=conta_id).order_by(
-        SaldoInvestimento.data_registro.desc()
+        SaldoInvestimento.data_registro.asc()  # Mudar para ascendente para o gráfico
     ).all()
     
     # Buscar lançamentos da conta
@@ -214,10 +214,22 @@ def historico_conta(conta_id):
         status='pago'
     ).order_by(Lancamento.data_pagamento.desc()).limit(20).all()
     
+    # Preparar dados para o gráfico
+    dados_grafico = {
+        'labels': [conta.data_criacao.strftime('%d/%m/%Y')] + [r.data_registro.strftime('%d/%m/%Y') for r in historico],
+        'valores': [float(conta.saldo_inicial)] + [float(r.saldo) for r in historico],
+        'rendimentos': [0] + [float(r.rendimento_mes) if r.rendimento_mes is not None else 0 for r in historico],
+        'percentuais': [0] + [float(r.percentual_mes) if r.percentual_mes is not None else 0 for r in historico]
+    }
+    
+    # Reverter a ordem do histórico para exibição na tabela (mais recente primeiro)
+    historico.reverse()
+    
     return render_template('historico_conta.html',
                          conta=conta,
                          historico=historico,
-                         lancamentos=lancamentos)
+                         lancamentos=lancamentos,
+                         dados_grafico=json.dumps(dados_grafico)) # Passar a variável como JSON
 
 @investimentos_bp.route('/api/dados-grafico-consolidado')
 def dados_grafico_consolidado():
