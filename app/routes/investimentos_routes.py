@@ -27,37 +27,33 @@ def dashboard():
     for conta in contas_investimento:
         historico = SaldoInvestimento.query.filter_by(conta_id=conta.id).order_by(SaldoInvestimento.data_registro).all()
         
+        # Preparar dados no formato esperado pelo JavaScript
+        labels = []
+        valores = []
+        
         # Incluir saldo inicial como primeiro ponto
-        dados = [{
-            'data': conta.data_criacao.strftime('%Y-%m-%d') if hasattr(conta, 'data_criacao') else date.today().strftime('%Y-%m-%d'),
-            'saldo': float(conta.saldo_inicial),
-            'rendimento': 0,
-            'percentual': 0
-        }]
+        data_inicial = conta.data_criacao if hasattr(conta, 'data_criacao') else date.today()
+        labels.append(data_inicial.strftime('%d/%m/%Y'))
+        valores.append(float(conta.saldo_inicial))
         
         # Adicionar histórico
         for registro in historico:
-            dados.append({
-                'data': registro.data_registro.strftime('%Y-%m-%d'),
-                'saldo': float(registro.saldo),
-                'rendimento': float(registro.rendimento_mes) if registro.rendimento_mes else 0,
-                'percentual': float(registro.percentual_mes) if registro.percentual_mes else 0
-            })
+            labels.append(registro.data_registro.strftime('%d/%m/%Y'))
+            valores.append(float(registro.saldo))
             
             # Atualizar último registro geral
             if not ultimo_registro_geral or registro.data_registro > ultimo_registro_geral:
                 ultimo_registro_geral = registro.data_registro
         
         # Adicionar saldo atual como último ponto se diferente do último registro
-        if not historico or historico[-1].saldo != conta.saldo_atual:
-            dados.append({
-                'data': date.today().strftime('%Y-%m-%d'),
-                'saldo': float(conta.saldo_atual),
-                'rendimento': 0,
-                'percentual': 0
-            })
+        if not historico or (historico and historico[-1].saldo != conta.saldo_atual):
+            labels.append(date.today().strftime('%d/%m/%Y'))
+            valores.append(float(conta.saldo_atual))
         
-        dados_contas[conta.id] = dados
+        dados_contas[conta.id] = {
+            'labels': labels,
+            'valores': valores
+        }
         
         # Adicionar informações extras à conta
         conta.rendimento = conta.saldo_atual - conta.saldo_inicial
@@ -68,10 +64,18 @@ def dashboard():
         conta.ultimo_registro = ultimo_reg.data_registro if ultimo_reg else None
     
     # Preparar dados consolidados para o gráfico geral
-    dados_consolidado = []
+    labels_consolidado = []
+    valores_consolidado = []
     
     # Coletar todas as datas únicas
     datas_set = set()
+    
+    # Adicionar datas iniciais das contas
+    for conta in contas_investimento:
+        if hasattr(conta, 'data_criacao') and conta.data_criacao:
+            datas_set.add(conta.data_criacao.date() if hasattr(conta.data_criacao, 'date') else conta.data_criacao)
+    
+    # Adicionar datas dos registros
     for conta in contas_investimento:
         historico = SaldoInvestimento.query.filter_by(conta_id=conta.id).all()
         for registro in historico:
@@ -84,6 +88,7 @@ def dashboard():
             total = Decimal('0')
             
             for conta in contas_investimento:
+                # Buscar o saldo mais recente até esta data
                 registro = SaldoInvestimento.query.filter(
                     and_(
                         SaldoInvestimento.conta_id == conta.id,
@@ -94,19 +99,26 @@ def dashboard():
                 if registro:
                     total += registro.saldo
                 else:
-                    total += conta.saldo_inicial
+                    # Se não há registro até esta data, usar saldo inicial
+                    if hasattr(conta, 'data_criacao'):
+                        data_conta = conta.data_criacao.date() if hasattr(conta.data_criacao, 'date') else conta.data_criacao
+                        if data_conta <= data:
+                            total += conta.saldo_inicial
+                    else:
+                        total += conta.saldo_inicial
             
-            dados_consolidado.append({
-                'data': data.strftime('%Y-%m-%d'),
-                'total': float(total)
-            })
+            labels_consolidado.append(data.strftime('%d/%m/%Y'))
+            valores_consolidado.append(float(total))
     
-    # Adicionar ponto atual
-    if contas_investimento:
-        dados_consolidado.append({
-            'data': date.today().strftime('%Y-%m-%d'),
-            'total': float(total_investido)
-        })
+    # Adicionar ponto atual se necessário
+    if contas_investimento and (not valores_consolidado or valores_consolidado[-1] != float(total_investido)):
+        labels_consolidado.append(date.today().strftime('%d/%m/%Y'))
+        valores_consolidado.append(float(total_investido))
+    
+    dados_consolidado = {
+        'labels': labels_consolidado,
+        'valores': valores_consolidado
+    }
     
     # Calcular estatísticas gerais
     total_inicial = sum(conta.saldo_inicial for conta in contas_investimento)
@@ -128,7 +140,7 @@ def registrar_saldo():
     if request.method == 'POST':
         conta_id = int(request.form.get('conta_id'))
         data_registro = datetime.strptime(request.form.get('data_registro'), '%Y-%m-%d').date()
-        saldo = Decimal(request.form.get('saldo', '0'))
+        saldo = Decimal(request.form.get('saldo', '0').replace(',', '.'))
         observacoes = request.form.get('observacoes', '')
         
         # Buscar conta
@@ -192,7 +204,8 @@ def registrar_saldo():
     
     return render_template('registrar_saldo.html',
                          contas=contas,
-                         data_sugerida=data_sugerida)
+                         data_sugerida=data_sugerida,
+                         today=hoje)
 
 @investimentos_bp.route('/historico/<int:conta_id>')
 def historico_conta(conta_id):
@@ -205,7 +218,7 @@ def historico_conta(conta_id):
     
     # Buscar histórico
     historico = SaldoInvestimento.query.filter_by(conta_id=conta_id).order_by(
-        SaldoInvestimento.data_registro.asc()  # Mudar para ascendente para o gráfico
+        SaldoInvestimento.data_registro.asc()
     ).all()
     
     # Buscar lançamentos da conta
@@ -215,21 +228,40 @@ def historico_conta(conta_id):
     ).order_by(Lancamento.data_pagamento.desc()).limit(20).all()
     
     # Preparar dados para o gráfico
+    labels = []
+    valores = []
+    rendimentos = []
+    percentuais = []
+    
+    # Adicionar ponto inicial
+    data_inicial = conta.data_criacao if hasattr(conta, 'data_criacao') else date.today()
+    labels.append(data_inicial.strftime('%d/%m/%Y'))
+    valores.append(float(conta.saldo_inicial))
+    rendimentos.append(0)
+    percentuais.append(0)
+    
+    # Adicionar dados do histórico
+    for registro in historico:
+        labels.append(registro.data_registro.strftime('%d/%m/%Y'))
+        valores.append(float(registro.saldo))
+        rendimentos.append(float(registro.rendimento_mes) if registro.rendimento_mes else 0)
+        percentuais.append(float(registro.percentual_mes) if registro.percentual_mes else 0)
+    
     dados_grafico = {
-        'labels': [conta.data_criacao.strftime('%d/%m/%Y')] + [r.data_registro.strftime('%d/%m/%Y') for r in historico],
-        'valores': [float(conta.saldo_inicial)] + [float(r.saldo) for r in historico],
-        'rendimentos': [0] + [float(r.rendimento_mes) if r.rendimento_mes is not None else 0 for r in historico],
-        'percentuais': [0] + [float(r.percentual_mes) if r.percentual_mes is not None else 0 for r in historico]
+        'labels': labels,
+        'valores': valores,
+        'rendimentos': rendimentos,
+        'percentuais': percentuais
     }
     
     # Reverter a ordem do histórico para exibição na tabela (mais recente primeiro)
-    historico.reverse()
+    historico_tabela = list(reversed(historico))
     
     return render_template('historico_conta.html',
                          conta=conta,
-                         historico=historico,
+                         historico=historico_tabela,
                          lancamentos=lancamentos,
-                         dados_grafico=json.dumps(dados_grafico)) # Passar a variável como JSON
+                         dados_grafico=json.dumps(dados_grafico))
 
 @investimentos_bp.route('/api/dados-grafico-consolidado')
 def dados_grafico_consolidado():
@@ -241,8 +273,9 @@ def dados_grafico_consolidado():
     datas_set = set()
     
     for conta in contas:
-        # Data inicial (criação da conta ou saldo inicial)
-        datas_set.add(conta.data_criacao.date() if hasattr(conta, 'data_criacao') else date.today())
+        # Data inicial
+        if hasattr(conta, 'data_criacao') and conta.data_criacao:
+            datas_set.add(conta.data_criacao.date() if hasattr(conta.data_criacao, 'date') else conta.data_criacao)
         
         # Datas do histórico
         historico = SaldoInvestimento.query.filter_by(conta_id=conta.id).all()
@@ -253,7 +286,9 @@ def dados_grafico_consolidado():
     datas_ordenadas = sorted(list(datas_set))
     
     # Construir dados consolidados
-    dados_consolidados = []
+    labels = []
+    valores = []
+    
     for data in datas_ordenadas:
         total = Decimal('0')
         
@@ -268,23 +303,28 @@ def dados_grafico_consolidado():
             
             if registro:
                 total += registro.saldo
-            elif hasattr(conta, 'data_criacao') and conta.data_criacao.date() <= data:
-                total += conta.saldo_inicial
+            else:
+                # Verificar se a conta já existia nesta data
+                if hasattr(conta, 'data_criacao'):
+                    data_conta = conta.data_criacao.date() if hasattr(conta.data_criacao, 'date') else conta.data_criacao
+                    if data_conta <= data:
+                        total += conta.saldo_inicial
+                else:
+                    total += conta.saldo_inicial
         
-        dados_consolidados.append({
-            'data': data.strftime('%Y-%m-%d'),
-            'total': float(total)
-        })
+        labels.append(data.strftime('%d/%m/%Y'))
+        valores.append(float(total))
     
     # Adicionar ponto atual se necessário
     total_atual = sum(conta.saldo_atual for conta in contas)
-    if not dados_consolidados or dados_consolidados[-1]['total'] != float(total_atual):
-        dados_consolidados.append({
-            'data': date.today().strftime('%Y-%m-%d'),
-            'total': float(total_atual)
-        })
+    if not valores or valores[-1] != float(total_atual):
+        labels.append(date.today().strftime('%d/%m/%Y'))
+        valores.append(float(total_atual))
     
-    return jsonify(dados_consolidados)
+    return jsonify({
+        'labels': labels,
+        'valores': valores
+    })
 
 @investimentos_bp.route('/editar-registro/<int:id>', methods=['GET', 'POST'])
 def editar_registro(id):
@@ -292,7 +332,7 @@ def editar_registro(id):
     registro = SaldoInvestimento.query.get_or_404(id)
     
     if request.method == 'POST':
-        novo_saldo = Decimal(request.form.get('saldo', '0'))
+        novo_saldo = Decimal(request.form.get('saldo', '0').replace(',', '.'))
         registro.observacoes = request.form.get('observacoes', '')
         
         # Recalcular rendimento

@@ -131,11 +131,26 @@
 
 {% block extra_js %}
 <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 <script>
-    // Dados para os gráficos
-    const dadosConsolidado = {{ dados_consolidado|tojson }};
-    const dadosContas = {{ dados_contas|tojson }};
+    // Dados para os gráficos - parseando JSON strings
+    console.log('=== TESTE DE DADOS INVESTIMENTOS ===');
+    
+    try {
+        // Os dados vêm como string JSON, então precisamos fazer parse
+        const dadosConsolidadoStr = {{ dados_consolidado|safe }};
+        const dadosContasStr = {{ dados_contas|safe }};
+        
+        // Parse dos dados
+        window.dadosConsolidado = typeof dadosConsolidadoStr === 'string' ? JSON.parse(dadosConsolidadoStr) : dadosConsolidadoStr;
+        window.dadosContas = typeof dadosContasStr === 'string' ? JSON.parse(dadosContasStr) : dadosContasStr;
+        
+        console.log('Dados consolidado parseados:', window.dadosConsolidado);
+        console.log('Dados contas parseados:', window.dadosContas);
+        
+    } catch (e) {
+        console.error('Erro ao processar dados:', e);
+    }
 </script>
 <script src="{{ url_for('static', filename='js/investimentos.js') }}"></script>
 {% endblock %}
