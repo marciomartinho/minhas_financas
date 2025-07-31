@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Saldo - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/investimentos.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="registro-form-card">
+    <h2>Registrar Saldo de Investimento</h2>
+    
+    <form method="POST" action="{{ url_for('investimentos.registrar_saldo') }}">
+        <div class="form-group">
+            <label for="conta_id">Conta de Investimento</label>
+            <select id="conta_id" name="conta_id" required>
+                <option value="">Selecione...</option>
+                {% for conta in contas %}
+                    <option value="{{ conta.id }}">
+                        {{ conta.nome }} - Saldo Atual: R$ {{ conta.saldo_atual|moeda }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="data_registro">Data do Registro</label>
+            <input type="date" id="data_registro" name="data_registro" 
+                   value="{{ today }}" max="{{ today }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="saldo">Saldo Atual (R$)</label>
+            <input type="number" id="saldo" name="saldo" step="0.01" 
+                   placeholder="0,00" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="observacoes">Observações (opcional)</label>
+            <textarea id="observacoes" name="observacoes" rows="3" 
+                      placeholder="Ex: Aplicação adicional de R$ 1.000, resgate de R$ 500, etc."></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('investimentos.dashboard') }}" class="btn btn-secondary">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Voltar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">save</span>
+                Registrar Saldo
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Dica informativa -->
+<div class="info-card" style="margin-top: 20px;">
+    <h3>
+        <span class="material-symbols-outlined">info</span>
+        Como funciona?
+    </h3>
+    <ul>
+        <li>Registre o saldo de suas contas de investimento periodicamente (recomendado: mensalmente)</li>
+        <li>O sistema calculará automaticamente o rendimento comparando com o registro anterior</li>
+        <li>Você pode fazer lançamentos de aportes ou resgates como despesas/receitas nas contas de investimento</li>
+        <li>Os gráficos mostrarão a evolução ao longo do tempo</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-calcular rendimento ao digitar o saldo
+    document.getElementById('conta_id').addEventListener('change', function() {
+        // Aqui você pode adicionar lógica para mostrar o saldo atual da conta selecionada
+    });
+    
+    // Formatar campo de valor
+    document.getElementById('saldo').addEventListener('blur', function() {
+        if (this.value) {
+            this.value = parseFloat(this.value).toFixed(2);
+        }
+    });
+</script>
+{% endblock %}

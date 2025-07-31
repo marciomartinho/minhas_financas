@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Investimentos - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/investimentos.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Header do Dashboard -->
+<div class="investimentos-header">
+    <div class="investimentos-header-top">
+        <h1>
+            <span class="material-symbols-outlined">trending_up</span>
+            Dashboard de Investimentos
+        </h1>
+        <a href="{{ url_for('investimentos.registrar_saldo') }}" class="btn-registrar-saldo">
+            <span class="material-symbols-outlined">add_circle</span>
+            Registrar Saldo
+        </a>
+    </div>
+    
+    <!-- Cards de Resumo -->
+    <div class="resumo-cards">
+        <div class="resumo-card">
+            <span class="resumo-label">Total Investido</span>
+            <span class="resumo-value">R$ {{ total_investimentos|moeda }}</span>
+        </div>
+        <div class="resumo-card {{ 'positivo' if rendimento_total >= 0 else 'negativo' }}">
+            <span class="resumo-label">Rendimento Total</span>
+            <span class="resumo-value {{ 'positivo' if rendimento_total >= 0 else 'negativo' }}">
+                R$ {{ rendimento_total|moeda }}
+            </span>
+            <span class="resumo-percentual {{ 'positivo' if percentual_total >= 0 else 'negativo' }}">
+                {{ percentual_total|round(2) }}%
+            </span>
+        </div>
+        <div class="resumo-card">
+            <span class="resumo-label">Último Registro</span>
+            <span class="resumo-value">{{ ultimo_registro.strftime('%d/%m/%Y') if ultimo_registro else 'Nenhum' }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico Consolidado -->
+<div class="grafico-consolidado">
+    <h2>
+        <span class="material-symbols-outlined">show_chart</span>
+        Evolução Total dos Investimentos
+    </h2>
+    <div class="grafico-container">
+        <canvas id="graficoConsolidado"></canvas>
+    </div>
+</div>
+
+<!-- Cards das Contas de Investimento -->
+{% if contas_investimento %}
+    <div class="contas-investimento">
+        {% for conta in contas_investimento %}
+            <div class="conta-investimento-card">
+                <div class="conta-header">
+                    <div class="conta-info">
+                        <div class="conta-icon">
+                            {% if conta.imagem_arquivo %}
+                                <img src="{{ url_for('static', filename='uploads/' + conta.imagem_arquivo) }}" alt="{{ conta.nome }}">
+                            {% else %}
+                                <span class="material-symbols-outlined">savings</span>
+                            {% endif %}
+                        </div>
+                        <div class="conta-nome">
+                            <h3>{{ conta.nome }}</h3>
+                        </div>
+                    </div>
+                    <div class="conta-saldo-atual">
+                        R$ {{ conta.saldo_atual|moeda }}
+                    </div>
+                </div>
+                
+                <div class="conta-detalhes">
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Saldo Inicial:</span>
+                        <span class="detalhe-valor">R$ {{ conta.saldo_inicial|moeda }}</span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Rendimento:</span>
+                        <span class="detalhe-valor {{ 'positivo' if conta.rendimento >= 0 else 'negativo' }}">
+                            R$ {{ conta.rendimento|moeda }}
+                            ({{ conta.percentual_rendimento|round(2) }}%)
+                        </span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Último Registro:</span>
+                        <span class="detalhe-valor">
+                            {{ conta.ultimo_registro.strftime('%d/%m/%Y') if conta.ultimo_registro else 'Nenhum' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="conta-grafico">
+                    <canvas id="grafico_{{ conta.id }}"></canvas>
+                </div>
+                
+                <div class="conta-actions">
+                    <a href="{{ url_for('investimentos.historico_conta', conta_id=conta.id) }}" class="btn-historico">
+                        <span class="material-symbols-outlined">history</span>
+                        Ver Histórico
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <span class="material-symbols-outlined">savings</span>
+        <p>Nenhuma conta de investimento cadastrada.</p>
+        <p>Cadastre uma conta do tipo "Investimento" para começar a acompanhar seus rendimentos.</p>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para os gráficos
+    const dadosConsolidado = {{ dados_consolidado|tojson }};
+    const dadosContas = {{ dados_contas|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/investimentos.js') }}"></script>
+{% endblock %}

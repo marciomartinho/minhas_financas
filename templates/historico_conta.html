@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico - {{ conta.nome }} - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/investimentos.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="historico-header">
+    <div class="historico-info">
+        <h1>
+            <span class="material-symbols-outlined">history</span>
+            Histórico - {{ conta.nome }}
+        </h1>
+        <a href="{{ url_for('investimentos.dashboard') }}" class="btn btn-secondary">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Voltar
+        </a>
+    </div>
+    <div class="saldo-atual-display">
+        <span class="saldo-label">Saldo Atual</span>
+        <span class="saldo-valor">R$ {{ conta.saldo_atual|moeda }}</span>
+    </div>
+</div>
+
+<!-- Gráfico de Evolução -->
+<div class="grafico-consolidado">
+    <h3>Evolução do Saldo</h3>
+    <div class="grafico-container">
+        <canvas id="graficoEvolucao"></canvas>
+    </div>
+</div>
+
+<!-- Tabela de Histórico -->
+<div class="historico-section">
+    <h3>Registros de Saldo</h3>
+    
+    {% if historico %}
+        <table class="tabela-historico">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Saldo</th>
+                    <th>Rendimento do Período</th>
+                    <th>% do Período</th>
+                    <th>Observações</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in historico %}
+                    <tr>
+                        <td>{{ registro.data_registro.strftime('%d/%m/%Y') }}</td>
+                        <td>R$ {{ registro.saldo|moeda }}</td>
+                        <td class="{{ 'positivo' if registro.rendimento_mes and registro.rendimento_mes >= 0 else 'negativo' if registro.rendimento_mes else '' }}">
+                            {% if registro.rendimento_mes is not none %}
+                                R$ {{ registro.rendimento_mes|moeda }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="{{ 'positivo' if registro.percentual_mes and registro.percentual_mes >= 0 else 'negativo' if registro.percentual_mes else '' }}">
+                            {% if registro.percentual_mes is not none %}
+                                {{ registro.percentual_mes|round(2) }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ registro.observacoes or '-' }}</td>
+                        <td>
+                            <button class="btn-icon-mini btn-edit" 
+                                    onclick="editarRegistro({{ registro.id }}, '{{ registro.data_registro }}', {{ registro.saldo }}, '{{ registro.observacoes or '' }}')"
+                                    title="Editar">
+                                <span class="material-symbols-outlined">edit</span>
+                            </button>
+                            <button class="btn-icon-mini btn-delete" 
+                                    onclick="confirmarExclusao({{ registro.id }})"
+                                    title="Excluir">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <span class="material-symbols-outlined">history_edu</span>
+            <p>Nenhum registro de saldo encontrado.</p>
+            <p>Registre o saldo atual desta conta para começar o acompanhamento.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Resumo de Lançamentos -->
+<div class="historico-section">
+    <h3>Lançamentos Recentes</h3>
+    
+    {% if lancamentos %}
+        <table class="tabela-historico">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lancamento in lancamentos %}
+                    <tr>
+                        <td>{{ lancamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ lancamento.descricao }}</td>
+                        <td>
+                            <span class="badge-{{ lancamento.tipo }}">
+                                {{ 'Aporte' if lancamento.tipo == 'receita' else 'Resgate' }}
+                            </span>
+                        </td>
+                        <td class="{{ 'positivo' if lancamento.tipo == 'receita' else 'negativo' }}">
+                            {{ '+' if lancamento.tipo == 'receita' else '-' }}R$ {{ lancamento.valor|moeda }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #6c757d; padding: 20px;">
+            Nenhum lançamento de aporte ou resgate registrado.
+        </p>
+    {% endif %}
+</div>
+
+<!-- Modal de Edição (implementar se necessário) -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para o gráfico
+    const dadosEvolucao = {{ dados_grafico|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/investimentos.js') }}"></script>
+{% endblock %}
