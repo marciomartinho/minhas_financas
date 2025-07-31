@@ -158,3 +158,27 @@ class MetaHistorico(db.Model):
     
     def __repr__(self):
         return f'<MetaHistorico {self.meta_id} - {self.mes_referencia}>'
+
+# Mapeamento da tabela de Histórico de Saldos de Investimentos
+class SaldoInvestimento(db.Model):
+    __tablename__ = 'saldos_investimentos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    conta_id = db.Column(db.Integer, db.ForeignKey('contas.id'), nullable=False)
+    data_registro = db.Column(db.Date, nullable=False)  # Data do registro (normalmente último dia do mês)
+    saldo = db.Column(db.Numeric(10, 2), nullable=False)
+    rendimento_mes = db.Column(db.Numeric(10, 2), nullable=True)  # Rendimento do mês (pode ser negativo)
+    percentual_mes = db.Column(db.Numeric(5, 2), nullable=True)  # Percentual de rendimento do mês
+    observacoes = db.Column(db.Text, nullable=True)  # Observações opcionais
+    data_criacao = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    # Relacionamentos
+    conta = db.relationship('Conta', backref='historico_saldos')
+    
+    # Índice único para evitar duplicatas
+    __table_args__ = (
+        db.UniqueConstraint('conta_id', 'data_registro', name='_conta_data_uc'),
+    )
+    
+    def __repr__(self):
+        return f'<SaldoInvestimento {self.conta.nome} - {self.data_registro} - R$ {self.saldo}>'
