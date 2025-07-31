@@ -117,7 +117,7 @@ def criar_despesa_cartao():
             
             # Criar parcelas restantes
             for i in range(2, num_parcelas + 1):
-                data_parcela = data_vencimento
+                data_parcela = data_vencimento + relativedelta(months=i-1)
                 mes_parcela = mes_inicial + relativedelta(months=i-1)
                 parcela = Lancamento(
                     descricao=f"{descricao} ({i}/{num_parcelas})",
@@ -699,6 +699,10 @@ def excluir_lancamento(id):
             ano = request.form.get('ano', date.today().year)
             return redirect(url_for('main.home', mes=mes, ano=ano))
         
+        # Redirecionar para extrato do cartão se vier de lá
+        if request.form.get('from_extrato') == 'true':
+            return redirect(url_for('main.extrato_cartao'))
+        
     except Exception as e:
         db.session.rollback()
         print(f"Erro ao excluir lançamento: {e}")
@@ -777,7 +781,13 @@ def editar_lancamento(id):
             # Atualizar dados
             lancamento.descricao = request.form.get('descricao')
             lancamento.valor = Decimal(request.form.get('valor', '0'))
-            lancamento.conta_id = int(request.form.get('conta_id'))
+            
+            # Para despesas do cartão, não atualizar conta_id
+            if lancamento.tipo != 'cartao_credito':
+                conta_id = request.form.get('conta_id')
+                if conta_id:
+                    lancamento.conta_id = int(conta_id)
+            
             lancamento.categoria_id = int(request.form.get('categoria_id'))
             subcategoria_id = request.form.get('subcategoria_id')
             lancamento.subcategoria_id = int(subcategoria_id) if subcategoria_id else None
@@ -807,12 +817,12 @@ def editar_lancamento(id):
                 # Atualizar todos
                 for lanc in lancamentos_editar:
                     lanc.valor = lancamento.valor
-                    lanc.conta_id = lancamento.conta_id
+                    if lancamento.tipo != 'cartao_credito':
+                        lanc.conta_id = lancamento.conta_id
                     lanc.categoria_id = lancamento.categoria_id
                     lanc.subcategoria_id = lancamento.subcategoria_id
                     lanc.tag = lancamento.tag
-                    if lancamento.tipo == 'cartao_credito':
-                        lanc.mes_inicial_cartao = lancamento.mes_inicial_cartao
+                    # NÃO atualizar mes_inicial_cartao para manter as datas originais
             
             db.session.commit()
             flash('Lançamento atualizado com sucesso!', 'success')
@@ -919,7 +929,7 @@ def pagar_fatura_cartao():
 
 # API para buscar subcategorias
 @lancamentos_bp.route('/api/categorias/<int:categoria_id>/subcategorias')
-def get_subcategorias(categoria_id):
+def obter_subcategorias(categoria_id):
     """Retorna subcategorias de uma categoria"""
     subcategorias = Subcategoria.query.filter_by(
         categoria_id=categoria_id,
@@ -928,5 +938,6 @@ def get_subcategorias(categoria_id):
     
     return jsonify([{
         'id': s.id,
-        'nome': s.nome
+        'nome': s.nome,
+        'descricao': s.descricao
     } for s in subcategorias])
