@@ -113,6 +113,13 @@ def home():
     total_receitas = sum(lancamento.valor for lancamento in receitas)
     total_despesas = sum(lancamento.valor for lancamento in despesas)
     
+    # Calcular totais de receitas e despesas PENDENTES para o resultado do mês
+    total_receitas_pendentes = sum(lancamento.valor for lancamento in receitas if lancamento.status == 'pendente')
+    total_despesas_pendentes = sum(lancamento.valor for lancamento in despesas if lancamento.status == 'pendente' and lancamento.tipo != 'fatura_cartao')
+    
+    # Calcular total das faturas de cartão não pagas
+    total_faturas_pendentes = sum(lancamento.valor for lancamento in despesas if lancamento.tipo == 'fatura_cartao' and lancamento.status == 'pendente')
+    
     # Criar lista de meses para o seletor
     meses = [
         {'numero': 1, 'nome': 'Janeiro'},
@@ -138,6 +145,9 @@ def home():
                          despesas=despesas,
                          total_receitas=total_receitas,
                          total_despesas=total_despesas,
+                         total_receitas_pendentes=total_receitas_pendentes,
+                         total_despesas_pendentes=total_despesas_pendentes,
+                         total_faturas_pendentes=total_faturas_pendentes,
                          mes_selecionado=mes,
                          ano_selecionado=ano,
                          meses=meses,

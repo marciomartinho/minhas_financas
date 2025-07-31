@@ -288,13 +288,13 @@
                 <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
             </div>
         </div>
-        <div class="resumo-card {{ 'positivo' if (total_receitas - total_despesas) >= 0 else 'negativo' }}">
+        <div class="resumo-card {{ 'positivo' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'negativo' }}">
             <span class="material-symbols-outlined">
-                {{ 'account_balance' if (total_receitas - total_despesas) >= 0 else 'error' }}
+                {{ 'account_balance' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'error' }}
             </span>
             <div>
                 <span class="resumo-label">Resultado do Mês</span>
-                <span class="resumo-value">R$ {{ (total_receitas - total_despesas)|moeda }}</span>
+                <span class="resumo-value">R$ {{ (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes)|moeda }}</span>
             </div>
         </div>
     </div>
