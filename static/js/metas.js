@@ -351,6 +351,116 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Função para expandir/recolher detalhes da meta
+async function toggleDetalhes(metaId) {
+    const card = document.querySelector(`[data-meta-id="${metaId}"]`);
+    const detalhesDiv = card.querySelector('.meta-despesas-detalhes');
+    const btnExpandir = card.querySelector('.meta-expandir-btn');
+    
+    if (detalhesDiv.classList.contains('show')) {
+        // Recolher
+        detalhesDiv.classList.remove('show');
+        btnExpandir.classList.remove('expanded');
+        btnExpandir.innerHTML = '<span class="material-symbols-outlined">expand_more</span> Ver Detalhes';
+    } else {
+        // Expandir e carregar dados se necessário
+        if (!detalhesDiv.dataset.loaded) {
+            await carregarDetalhesMeta(metaId);
+        }
+        detalhesDiv.classList.add('show');
+        btnExpandir.classList.add('expanded');
+        btnExpandir.innerHTML = '<span class="material-symbols-outlined">expand_less</span> Ocultar Detalhes';
+    }
+}
+
+// Função para carregar detalhes via AJAX
+async function carregarDetalhesMeta(metaId) {
+    const card = document.querySelector(`[data-meta-id="${metaId}"]`);
+    const detalhesDiv = card.querySelector('.meta-despesas-detalhes');
+    const despesasLista = detalhesDiv.querySelector('.despesas-lista');
+    
+    // Mostrar loading
+    despesasLista.innerHTML = '<div class="despesas-loading"><div class="spinner"></div><p>Carregando detalhes...</p></div>';
+    
+    try {
+        // Pegar mês e ano atuais da página
+        const urlParams = new URLSearchParams(window.location.search);
+        const mes = urlParams.get('mes') || new Date().getMonth() + 1;
+        const ano = urlParams.get('ano') || new Date().getFullYear();
+        
+        // Fazer requisição
+        const response = await fetch(`/metas/${metaId}/detalhes?mes=${mes}&ano=${ano}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Construir HTML das despesas
+            let html = '';
+            
+            if (data.despesas.length === 0) {
+                html = '<p style="text-align: center; color: #6c757d; padding: 20px;">Nenhuma despesa encontrada neste período.</p>';
+            } else {
+                // Lista de despesas
+                data.despesas.forEach(despesa => {
+                    const tipoBadge = despesa.tipo === 'cartao_credito' 
+                        ? '<span class="tipo-despesa-badge tipo-cartao">Cartão</span>' 
+                        : '';
+                    
+                    const cartaoInfo = despesa.cartao 
+                        ? ` • ${despesa.cartao}` 
+                        : '';
+                    
+                    html += `
+                        <div class="despesa-item">
+                            <div class="despesa-info">
+                                <div class="despesa-descricao">
+                                    ${despesa.descricao}${tipoBadge}
+                                </div>
+                                <div class="despesa-data">
+                                    <span class="material-symbols-outlined">calendar_today</span>
+                                    ${despesa.data} • ${despesa.categoria}${cartaoInfo}
+                                </div>
+                            </div>
+                            <div class="despesa-valor">
+                                R$ ${despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Resumo por categoria
+                if (data.resumo.length > 1) {
+                    html += '<div class="despesas-resumo">';
+                    html += '<h5 style="font-size: 14px; margin-bottom: 10px; color: #495057;">Resumo por Categoria:</h5>';
+                    data.resumo.forEach(item => {
+                        html += `
+                            <div class="resumo-categoria">
+                                <span class="resumo-categoria-nome">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">category</span>
+                                    ${item.categoria}
+                                </span>
+                                <span class="resumo-categoria-valor">
+                                    R$ ${item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+            }
+            
+            despesasLista.innerHTML = html;
+            detalhesDiv.dataset.loaded = 'true';
+            
+        } else {
+            despesasLista.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Erro ao carregar detalhes.</p>';
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar detalhes:', error);
+        despesasLista.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Erro ao carregar detalhes.</p>';
+    }
+}
+
 // Adicionar estilos CSS para tooltips e efeitos
 const style = document.createElement('style');
 style.textContent = `

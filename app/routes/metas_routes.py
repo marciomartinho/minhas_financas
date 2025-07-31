@@ -265,6 +265,123 @@ def excluir_meta(id):
     
     return redirect(url_for('metas.listar_metas'))
 
+@metas_bp.route('/<int:id>/detalhes')
+def obter_detalhes_meta(id):
+    """Obter detalhes das despesas de uma meta via AJAX"""
+    try:
+        meta = Meta.query.get_or_404(id)
+        
+        # Obter mês/ano da query string
+        mes = request.args.get('mes', type=int, default=date.today().month)
+        ano = request.args.get('ano', type=int, default=date.today().year)
+        mes_referencia = date(ano, mes, 1)
+        
+        # Calcular progresso para obter as datas
+        progresso = calcular_progresso_meta(meta, mes_referencia)
+        data_inicio = progresso['data_inicio']
+        data_fim = progresso['data_fim']
+        
+        # Determinar se é período futuro
+        periodo_futuro = mes_referencia > date.today().replace(day=1)
+        
+        # Buscar despesas baseado no tipo de meta
+        if periodo_futuro:
+            query_base = Lancamento.query.filter(
+                Lancamento.tipo.in_(['despesa', 'cartao_credito'])
+            )
+        else:
+            query_base = Lancamento.query.filter(
+                Lancamento.tipo.in_(['despesa', 'cartao_credito']),
+                Lancamento.status == 'pago'
+            )
+        
+        # Filtrar por tipo de meta
+        if meta.tipo == 'categoria':
+            query_base = query_base.filter(Lancamento.categoria_id == meta.categoria_id)
+        elif meta.tipo == 'tag':
+            query_base = query_base.filter(Lancamento.tag == meta.tag)
+        
+        # Incluir ou não despesas de cartão
+        if not meta.incluir_cartao:
+            query_base = query_base.filter(Lancamento.tipo != 'cartao_credito')
+        
+        # Buscar despesas normais
+        if periodo_futuro:
+            despesas_normais = query_base.filter(
+                Lancamento.tipo == 'despesa',
+                Lancamento.data_vencimento >= data_inicio,
+                Lancamento.data_vencimento <= data_fim
+            ).order_by(Lancamento.data_vencimento.desc()).all()
+        else:
+            despesas_normais = query_base.filter(
+                Lancamento.tipo == 'despesa',
+                Lancamento.data_pagamento >= data_inicio,
+                Lancamento.data_pagamento <= data_fim
+            ).order_by(Lancamento.data_pagamento.desc()).all()
+        
+        # Buscar despesas de cartão
+        if meta.periodo == 'mensal':
+            despesas_cartao = query_base.filter(
+                Lancamento.tipo == 'cartao_credito',
+                extract('year', Lancamento.mes_inicial_cartao) == data_inicio.year,
+                extract('month', Lancamento.mes_inicial_cartao) == data_inicio.month
+            ).order_by(Lancamento.data_vencimento.desc()).all()
+        else:
+            despesas_cartao = query_base.filter(
+                Lancamento.tipo == 'cartao_credito',
+                Lancamento.mes_inicial_cartao >= data_inicio,
+                Lancamento.mes_inicial_cartao <= data_fim
+            ).order_by(Lancamento.mes_inicial_cartao.desc()).all()
+        
+        # Combinar todas as despesas
+        todas_despesas = despesas_normais + despesas_cartao
+        
+        # Preparar dados para retornar
+        despesas_json = []
+        resumo_categorias = {}
+        
+        for despesa in todas_despesas:
+            # Adicionar ao resumo por categoria
+            cat_nome = despesa.categoria.nome if despesa.categoria else 'Sem categoria'
+            if cat_nome not in resumo_categorias:
+                resumo_categorias[cat_nome] = 0
+            resumo_categorias[cat_nome] += float(despesa.valor)
+            
+            # Preparar dados da despesa
+            despesas_json.append({
+                'id': despesa.id,
+                'descricao': despesa.descricao,
+                'valor': float(despesa.valor),
+                'data': despesa.data_vencimento.strftime('%d/%m/%Y'),
+                'tipo': despesa.tipo,
+                'categoria': cat_nome,
+                'cartao': despesa.cartao.nome if despesa.cartao else None,
+                'status': despesa.status
+            })
+        
+        # Ordenar despesas por valor (maior primeiro)
+        despesas_json.sort(key=lambda x: x['valor'], reverse=True)
+        
+        # Preparar resumo
+        resumo_json = [
+            {'categoria': cat, 'total': total} 
+            for cat, total in sorted(resumo_categorias.items(), key=lambda x: x[1], reverse=True)
+        ]
+        
+        return jsonify({
+            'success': True,
+            'despesas': despesas_json,
+            'resumo': resumo_json,
+            'total': sum(d['valor'] for d in despesas_json)
+        })
+        
+    except Exception as e:
+        print(f"Erro ao obter detalhes da meta: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Erro ao carregar detalhes'
+        }), 500
+
 # Funções auxiliares
 def calcular_progresso_meta(meta, mes_referencia):
     """Calcular o progresso de uma meta para um determinado mês"""

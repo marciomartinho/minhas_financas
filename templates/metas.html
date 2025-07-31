@@ -107,6 +107,7 @@
     <div class="metas-container">
         {% for item in metas %}
             <div class="meta-card {{ 'pausada' if not item.meta.ativa else '' }}" 
+                 data-meta-id="{{ item.meta.id }}"
                  data-valor-gasto="{{ item.progresso.valor_gasto }}"
                  data-valor-limite="{{ item.progresso.valor_limite }}">
                 <div class="meta-header">
@@ -185,6 +186,18 @@
                                 <span style="color: #dc3545;">Excedido</span>
                             {% endif %}
                         </span>
+                    </div>
+                    <!-- Botão para expandir detalhes -->
+                    <button class="meta-expandir-btn" onclick="toggleDetalhes({{ item.meta.id }})">
+                   <span class="material-symbols-outlined">expand_more</span>
+                   Ver Detalhes
+                    </button>
+
+                    <!-- Seção de detalhes expansível -->
+                    <div class="meta-despesas-detalhes">
+                        <div class="despesas-lista">
+                            <!-- Conteúdo carregado via AJAX -->
+                        </div>
                     </div>
                     <div class="detalhe-item">
                         <span class="detalhe-label">Alertar em:</span>
