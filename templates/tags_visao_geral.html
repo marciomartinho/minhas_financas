@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Visão Geral das Tags - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tags.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Seletor de Tag e Período -->
+<div class="tag-selector">
+    <div class="tag-selector-header">
+        <h1>
+            <span class="material-symbols-outlined">label</span>
+            Visão Geral das Tags
+        </h1>
+    </div>
+    
+    <div class="selectors-container">
+        <form method="GET" action="{{ url_for('tags.visao_geral_tags') }}" class="form-tag-filter" id="formFiltroTags">
+            <select name="tag" class="tag-select" onchange="this.form.submit()">
+                <option value="">Selecione uma tag...</option>
+                {% for tag in tags_disponiveis %}
+                    <option value="{{ tag }}" {% if tag == tag_selecionada %}selected{% endif %}>
+                        {{ tag }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="mes" onchange="this.form.submit()">
+                {% for mes_item in meses %}
+                    <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                        {{ mes_item.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="ano" onchange="this.form.submit()">
+                {% for ano in range(2020, 2030) %}
+                    <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if tag_selecionada %}
+    <!-- Informações da Tag Selecionada -->
+    <div class="tag-info">
+        <div class="tag-display">
+            <span class="tag-badge-large">
+                <span class="material-symbols-outlined">label</span>
+                {{ tag_selecionada }}
+            </span>
+        </div>
+        <div class="periodo-info">
+            <span class="material-symbols-outlined">calendar_today</span>
+            {{ periodo_exibido }}
+        </div>
+    </div>
+    
+    <!-- Tabelas de Receitas e Despesas -->
+    <div class="tabelas-container">
+        <!-- Tabela de Receitas -->
+        <div class="tabela-section">
+            <div class="tabela-header">
+                <h3>
+                    <span class="material-symbols-outlined">trending_up</span>
+                    Receitas
+                </h3>
+                <div class="total-badge receita">R$ {{ total_receitas|moeda }}</div>
+            </div>
+            {% if receitas %}
+                <div class="table-wrapper">
+                    <table class="tabela-lancamentos">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Conta</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lancamento in receitas %}
+                                <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
+                                    <td class="col-status">
+                                        <span class="status-icon {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}">
+                                            <span class="material-symbols-outlined">
+                                                {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td>{{ lancamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {{ lancamento.descricao }}
+                                        {% if lancamento.numero_parcela %}
+                                            <span class="badge-parcela">
+                                                {{ lancamento.numero_parcela }}/{{ lancamento.total_parcelas }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                            {{ lancamento.categoria.nome }}
+                                        </span>
+                                    </td>
+                                    <td>{{ lancamento.conta.nome }}</td>
+                                    <td class="col-valor receita">R$ {{ lancamento.valor|moeda }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-table">
+                    <span class="material-symbols-outlined">inbox</span>
+                    <p>Nenhuma receita encontrada</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Tabela de Despesas -->
+        <div class="tabela-section">
+            <div class="tabela-header">
+                <h3>
+                    <span class="material-symbols-outlined">trending_down</span>
+                    Despesas
+                </h3>
+                <div class="total-badge despesa">R$ {{ total_despesas|moeda }}</div>
+            </div>
+            {% if despesas %}
+                <div class="table-wrapper">
+                    <table class="tabela-lancamentos">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Conta/Cartão</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lancamento in despesas %}
+                                <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }} {{ 'row-cartao' if lancamento.tipo == 'cartao_credito' else '' }}">
+                                    <td class="col-status">
+                                        <span class="status-icon {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}">
+                                            <span class="material-symbols-outlined">
+                                                {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td>{{ lancamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {{ lancamento.descricao }}
+                                        {% if lancamento.numero_parcela %}
+                                            <span class="badge-parcela">
+                                                {{ lancamento.numero_parcela }}/{{ lancamento.total_parcelas }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="categoria-mini" style="color: {{ lancamento.categoria.cor }};">
+                                            {{ lancamento.categoria.nome }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if lancamento.tipo == 'cartao_credito' %}
+                                            <span class="tipo-cartao">
+                                                <span class="material-symbols-outlined">credit_card</span>
+                                                {{ lancamento.cartao.nome }}
+                                            </span>
+                                        {% else %}
+                                            {{ lancamento.conta.nome }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-valor despesa">R$ {{ lancamento.valor|moeda }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-table">
+                    <span class="material-symbols-outlined">inbox</span>
+                    <p>Nenhuma despesa encontrada</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Resumo Executivo -->
+    <div class="resumo-executivo">
+        <h3>Resumo da Tag "{{ tag_selecionada }}"</h3>
+        <div class="resumo-cards">
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
+                <div>
+                    <span class="resumo-label">Total de Receitas</span>
+                    <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
+                <div>
+                    <span class="resumo-label">Total de Despesas</span>
+                    <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card {{ 'positivo' if (total_receitas - total_despesas) >= 0 else 'negativo' }}">
+                <span class="material-symbols-outlined">
+                    {{ 'account_balance' if (total_receitas - total_despesas) >= 0 else 'error' }}
+                </span>
+                <div>
+                    <span class="resumo-label">Resultado</span>
+                    <span class="resumo-value">R$ {{ (total_receitas - total_despesas)|moeda }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <!-- Estado Vazio -->
+    <div class="empty-state">
+        <span class="material-symbols-outlined">label_off</span>
+        <p>Selecione uma tag para visualizar os lançamentos</p>
+        <p>
+            {% if not tags_disponiveis %}
+                Nenhuma tag cadastrada no sistema ainda.
+            {% else %}
+                {{ tags_disponiveis|length }} tag{{ 's' if tags_disponiveis|length > 1 else '' }} disponíve{{ 'is' if tags_disponiveis|length > 1 else 'l' }}
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/tags.js') }}"></script>
+{% endblock %}

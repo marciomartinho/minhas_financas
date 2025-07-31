@@ -178,7 +178,8 @@ def criar_despesa_cartao():
             data_atual = data_vencimento
             mes_atual = mes_inicial
             for i in range(1, total_lancamentos):
-                data_atual = data_atual
+                # CORREÇÃO: Incrementar ambas as datas
+                data_atual = data_atual + incremento
                 mes_atual = mes_atual + incremento
                 lancamento = Lancamento(
                     descricao=descricao,

@@ -61,11 +61,13 @@ def create_app():
         from .routes.categorias_routes import categorias_bp
         from .routes.cartoes_routes import cartoes_bp
         from .routes.lancamentos_routes import lancamentos_bp
+        from .routes.tags_routes import tags_bp
         
         app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
         app.register_blueprint(categorias_bp, url_prefix='/categorias')
         app.register_blueprint(cartoes_bp)
         app.register_blueprint(lancamentos_bp)
+        app.register_blueprint(tags_bp)
 
     return app
