@@ -103,13 +103,25 @@
     <!-- Lista de Despesas -->
     <div class="despesas-cartao-section">
         <div class="section-header">
-            <h3>
-                <span class="material-symbols-outlined">receipt_long</span>
-                Despesas do Período
-            </h3>
-            <span style="color: #6c757d; font-size: 14px;">
-                {{ despesas|length }} {{ 'item' if despesas|length == 1 else 'itens' }}
-            </span>
+            <div class="section-title-group">
+                <h3>
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    Despesas do Período
+                </h3>
+                <span style="color: #6c757d; font-size: 14px;">
+                    {{ despesas|length }} {{ 'item' if despesas|length == 1 else 'itens' }}
+                </span>
+            </div>
+            
+            <!-- Botão de Download Excel -->
+            {% if despesas %}
+                <a href="{{ url_for('main.download_extrato_cartao', cartao_id=cartao_selecionado.id, mes=mes_selecionado, ano=ano_selecionado) }}" 
+                   class="btn-download-excel"
+                   title="Baixar extrato em Excel">
+                    <span class="material-symbols-outlined">download</span>
+                    Baixar Excel
+                </a>
+            {% endif %}
         </div>
         
         {% if despesas %}
