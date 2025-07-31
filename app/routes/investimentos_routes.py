@@ -20,8 +20,10 @@ def dashboard():
     # Calcular total atual
     total_investido = sum(conta.saldo_atual for conta in contas_investimento)
     
-    # Preparar dados para os gráficos
-    dados_graficos = {}
+    # Preparar dados para os gráficos individuais
+    dados_contas = {}
+    ultimo_registro_geral = None
+    
     for conta in contas_investimento:
         historico = SaldoInvestimento.query.filter_by(conta_id=conta.id).order_by(SaldoInvestimento.data_registro).all()
         
@@ -41,6 +43,10 @@ def dashboard():
                 'rendimento': float(registro.rendimento_mes) if registro.rendimento_mes else 0,
                 'percentual': float(registro.percentual_mes) if registro.percentual_mes else 0
             })
+            
+            # Atualizar último registro geral
+            if not ultimo_registro_geral or registro.data_registro > ultimo_registro_geral:
+                ultimo_registro_geral = registro.data_registro
         
         # Adicionar saldo atual como último ponto se diferente do último registro
         if not historico or historico[-1].saldo != conta.saldo_atual:
@@ -51,20 +57,70 @@ def dashboard():
                 'percentual': 0
             })
         
-        dados_graficos[conta.id] = dados
+        dados_contas[conta.id] = dados
+        
+        # Adicionar informações extras à conta
+        conta.rendimento = conta.saldo_atual - conta.saldo_inicial
+        conta.percentual_rendimento = ((conta.saldo_atual / conta.saldo_inicial - 1) * 100) if conta.saldo_inicial > 0 else 0
+        
+        # Último registro da conta
+        ultimo_reg = historico[-1] if historico else None
+        conta.ultimo_registro = ultimo_reg.data_registro if ultimo_reg else None
+    
+    # Preparar dados consolidados para o gráfico geral
+    dados_consolidado = []
+    
+    # Coletar todas as datas únicas
+    datas_set = set()
+    for conta in contas_investimento:
+        historico = SaldoInvestimento.query.filter_by(conta_id=conta.id).all()
+        for registro in historico:
+            datas_set.add(registro.data_registro)
+    
+    if datas_set:
+        datas_ordenadas = sorted(list(datas_set))
+        
+        for data in datas_ordenadas:
+            total = Decimal('0')
+            
+            for conta in contas_investimento:
+                registro = SaldoInvestimento.query.filter(
+                    and_(
+                        SaldoInvestimento.conta_id == conta.id,
+                        SaldoInvestimento.data_registro <= data
+                    )
+                ).order_by(SaldoInvestimento.data_registro.desc()).first()
+                
+                if registro:
+                    total += registro.saldo
+                else:
+                    total += conta.saldo_inicial
+            
+            dados_consolidado.append({
+                'data': data.strftime('%Y-%m-%d'),
+                'total': float(total)
+            })
+    
+    # Adicionar ponto atual
+    if contas_investimento:
+        dados_consolidado.append({
+            'data': date.today().strftime('%Y-%m-%d'),
+            'total': float(total_investido)
+        })
     
     # Calcular estatísticas gerais
     total_inicial = sum(conta.saldo_inicial for conta in contas_investimento)
     rendimento_total = total_investido - total_inicial
     percentual_total = ((total_investido / total_inicial - 1) * 100) if total_inicial > 0 else 0
     
-    return render_template('investimentos_dashboard.html',
-                         contas=contas_investimento,
-                         total_investido=total_investido,
-                         total_inicial=total_inicial,
+    return render_template('investimentos.html',
+                         contas_investimento=contas_investimento,
+                         total_investimentos=total_investido,
                          rendimento_total=rendimento_total,
                          percentual_total=percentual_total,
-                         dados_graficos=json.dumps(dados_graficos))
+                         ultimo_registro=ultimo_registro_geral,
+                         dados_consolidado=json.dumps(dados_consolidado),
+                         dados_contas=json.dumps(dados_contas))
 
 @investimentos_bp.route('/registrar-saldo', methods=['GET', 'POST'])
 def registrar_saldo():
@@ -134,7 +190,7 @@ def registrar_saldo():
         proximo_mes = hoje.replace(day=28) + timedelta(days=4)
         data_sugerida = proximo_mes - timedelta(days=proximo_mes.day)
     
-    return render_template('investimentos_registrar.html',
+    return render_template('registrar_saldo.html',
                          contas=contas,
                          data_sugerida=data_sugerida)
 
@@ -158,7 +214,7 @@ def historico_conta(conta_id):
         status='pago'
     ).order_by(Lancamento.data_pagamento.desc()).limit(20).all()
     
-    return render_template('investimentos_historico.html',
+    return render_template('historico_conta.html',
                          conta=conta,
                          historico=historico,
                          lancamentos=lancamentos)
