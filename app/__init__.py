@@ -3,6 +3,7 @@
 import os
 from flask import Flask
 from flask_migrate import Migrate
+from flask_mail import Mail
 from dotenv import load_dotenv
 
 from .models import db
@@ -12,6 +13,9 @@ load_dotenv()
 # --- MUDANÇA PRINCIPAL ---
 # Pega o caminho absoluto para a pasta raiz do projeto (um nível acima de 'app')
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+# Instância do Flask-Mail
+mail = Mail()
 
 def create_app():
     """
@@ -34,16 +38,31 @@ def create_app():
     # Criar pasta de uploads se não existir
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
+    # Configuração do banco de dados
     db_uri = os.getenv('DATABASE_URI')
     if not db_uri:
         raise ValueError("DATABASE_URI não foi encontrada no arquivo .env")
 
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # --- CONFIGURAÇÃO DO FLASK-MAIL ---
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'False').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+    
+    # Configuração de alertas
+    app.config['ALERT_RECIPIENT'] = os.getenv('ALERT_RECIPIENT')
+    app.config['ALERT_DAYS_BEFORE'] = int(os.getenv('ALERT_DAYS_BEFORE', 1))
 
     # --- INICIALIZAÇÃO DAS EXTENSÕES ---
     db.init_app(app)
     Migrate(app, db)
+    mail.init_app(app)
     
     # --- FILTROS PERSONALIZADOS ---
     @app.template_filter('moeda')

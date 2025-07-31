@@ -390,6 +390,20 @@
     margin-left: 5px;
 }
 
+/* --- Badge Vencido --- */
+.badge-vencido {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 6px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .categoria-mini {
     font-size: 12px;
     font-weight: 500;

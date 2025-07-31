@@ -121,7 +121,12 @@
                                         </span>
                                     </button>
                                 </td>
-                                <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ lancamento.data_vencimento.strftime('%d/%m') }}
+                                    {% if lancamento.data_vencimento < today and lancamento.status != 'pago' %}
+                                        <span class="badge-vencido">Vencido</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {{ lancamento.descricao }}
                                     {% if lancamento.tag %}
@@ -203,7 +208,12 @@
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td>{{ lancamento.data_vencimento.strftime('%d/%m') }}</td>
+                                <td>
+                                    {{ lancamento.data_vencimento.strftime('%d/%m') }}
+                                    {% if lancamento.data_vencimento < today and lancamento.status != 'pago' %}
+                                        <span class="badge-vencido">Vencido</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {{ lancamento.descricao }}
                                     {% if lancamento.tag %}

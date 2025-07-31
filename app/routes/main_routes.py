@@ -1,9 +1,10 @@
 # app/routes/main_routes.py
 
-from flask import Blueprint, render_template, request, Response
+from flask import Blueprint, render_template, request, Response, flash, redirect, url_for, current_app
 from app.models import db, Conta, Lancamento, Cartao, Categoria
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from calendar import monthrange
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, extract, and_
 from collections import defaultdict
 import io
@@ -375,3 +376,22 @@ def download_extrato_cartao():
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={"Content-disposition": f"attachment; filename={filename}"}
     )
+
+@main_bp.route('/testar-alertas')
+def testar_alertas():
+    """Rota de teste para enviar alertas de email imediatamente"""
+    try:
+        from app.services.scheduler import executar_alertas_agora
+        
+        # Executar alertas
+        sucesso = executar_alertas_agora(current_app)
+        
+        if sucesso:
+            flash('Alertas enviados com sucesso! Verifique seu email.', 'success')
+        else:
+            flash('Nenhum alerta foi enviado. Verifique se há lançamentos vencendo amanhã ou se houve algum erro.', 'info')
+            
+    except Exception as e:
+        flash(f'Erro ao enviar alertas: {str(e)}', 'error')
+        
+    return redirect(url_for('main.home'))
