@@ -115,4 +115,46 @@ class Lancamento(db.Model):
     def __repr__(self):
         return f'<Lancamento {self.descricao} - R$ {self.valor}>'
 
+# Mapeamento da tabela de Metas Orçamentárias
+class Meta(db.Model):
+    __tablename__ = 'metas'
 
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # 'categoria', 'tag', 'global'
+    valor_limite = db.Column(db.Numeric(10, 2), nullable=False)
+    periodo = db.Column(db.String(20), nullable=False)  # 'mensal', 'trimestral', 'anual'
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    tag = db.Column(db.String(50), nullable=True)  # Para metas por tag
+    data_inicio = db.Column(db.Date, nullable=False)
+    data_fim = db.Column(db.Date, nullable=True)  # Null = sem fim definido
+    ativa = db.Column(db.Boolean, default=True)
+    alertar_percentual = db.Column(db.Integer, default=80)  # Alertar quando atingir X%
+    renovar_automaticamente = db.Column(db.Boolean, default=True)
+    incluir_cartao = db.Column(db.Boolean, default=True)  # Incluir despesas do cartão
+    data_criacao = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    # Relacionamentos
+    categoria = db.relationship('Categoria', backref='metas')
+    
+    def __repr__(self):
+        return f'<Meta {self.nome} - R$ {self.valor_limite}>'
+
+
+# Mapeamento da tabela de Histórico de Metas (para acompanhamento mensal)
+class MetaHistorico(db.Model):
+    __tablename__ = 'metas_historico'
+
+    id = db.Column(db.Integer, primary_key=True)
+    meta_id = db.Column(db.Integer, db.ForeignKey('metas.id'), nullable=False)
+    mes_referencia = db.Column(db.Date, nullable=False)  # Sempre dia 01 do mês
+    valor_gasto = db.Column(db.Numeric(10, 2), nullable=False, default=0)
+    valor_limite = db.Column(db.Numeric(10, 2), nullable=False)  # Snapshot do limite naquele mês
+    status = db.Column(db.String(20), nullable=False)  # 'em_andamento', 'cumprida', 'excedida'
+    data_fechamento = db.Column(db.DateTime, nullable=True)  # Quando o mês foi fechado
+    
+    # Relacionamentos
+    meta = db.relationship('Meta', backref='historicos')
+    
+    def __repr__(self):
+        return f'<MetaHistorico {self.meta_id} - {self.mes_referencia}>'

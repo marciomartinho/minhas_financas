@@ -81,6 +81,7 @@ def create_app():
         from .routes.cartoes_routes import cartoes_bp
         from .routes.lancamentos_routes import lancamentos_bp
         from .routes.tags_routes import tags_bp
+        from .routes.metas_routes import metas_bp
         
         app.register_blueprint(main_bp)
         app.register_blueprint(contas_bp)
@@ -88,5 +89,6 @@ def create_app():
         app.register_blueprint(cartoes_bp)
         app.register_blueprint(lancamentos_bp)
         app.register_blueprint(tags_bp)
+        app.register_blueprint(metas_bp)
 
     return app

@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Metas Orçamentárias - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/metas.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Seletor de Período -->
+<div class="periodo-selector-metas">
+    <div class="periodo-info">
+        <h2>
+            <span class="material-symbols-outlined">calendar_month</span>
+            Visualizando: {{ meses[mes_selecionado - 1].nome }}/{{ ano_selecionado }}
+        </h2>
+        {% if mes_referencia > today.replace(day=1) %}
+            <span class="periodo-futuro-badge">
+                <span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                Período Futuro
+            </span>
+        {% endif %}
+    </div>
+    <div class="periodo-controls">
+        <form method="GET" action="{{ url_for('metas.listar_metas') }}" class="form-periodo-metas">
+            <select name="mes" id="mes" onchange="this.form.submit()">
+                {% for mes_item in meses %}
+                    <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                        {{ mes_item.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            <select name="ano" id="ano" onchange="this.form.submit()">
+                {% for ano_opt in range(2020, 2030) %}
+                    <option value="{{ ano_opt }}" {% if ano_opt == ano_selecionado %}selected{% endif %}>{{ ano_opt }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{{ url_for('metas.listar_metas') }}" class="btn-hoje" title="Voltar para o mês atual">
+            <span class="material-symbols-outlined">today</span>
+            <span>Mês Atual</span>
+        </a>
+    </div>
+</div>
+
+<!-- Header das Metas (modificado) -->
+<div class="metas-header">
+    <div class="metas-header-content">
+        <div class="metas-title-section">
+            <h1>
+                <span class="material-symbols-outlined">savings</span>
+                Metas Orçamentárias
+            </h1>
+        </div>
+        <button class="btn-nova-meta" onclick="abrirModalNovaMeta()">
+            <span class="material-symbols-outlined">add</span>
+            Nova Meta
+        </button>
+    </div>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_metas }}</div>
+            <div class="stat-label">Metas Ativas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ metas_cumpridas }}/{{ total_metas }}</div>
+            <div class="stat-label">Cumpridas em {{ meses[mes_selecionado - 1].nome }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ ((metas_cumpridas/total_metas*100) if total_metas > 0 else 0)|round|int }}%</div>
+            <div class="stat-label">Taxa de Sucesso</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs de Filtro -->
+<div class="metas-tabs">
+    <button class="tab-button active" onclick="filtrarMetas('todas')">
+        <span class="material-symbols-outlined">view_list</span>
+        Todas
+    </button>
+    <button class="tab-button" onclick="filtrarMetas('ativas')">
+        <span class="material-symbols-outlined">play_circle</span>
+        Ativas
+    </button>
+    <button class="tab-button" onclick="filtrarMetas('pausadas')">
+        <span class="material-symbols-outlined">pause_circle</span>
+        Pausadas
+    </button>
+</div>
+
+<!-- Container de Metas -->
+{% if metas %}
+    <div class="metas-container">
+        {% for item in metas %}
+            <div class="meta-card {{ 'pausada' if not item.meta.ativa else '' }}" 
+                 data-valor-gasto="{{ item.progresso.valor_gasto }}"
+                 data-valor-limite="{{ item.progresso.valor_limite }}">
+                <div class="meta-header">
+                    <div class="meta-info">
+                        <h3>
+                            {% if item.meta.tipo == 'categoria' %}
+                                <span class="material-symbols-outlined" style="color: {{ item.meta.categoria.cor }};">{{ item.meta.categoria.icone }}</span>
+                            {% elif item.meta.tipo == 'tag' %}
+                                <span class="material-symbols-outlined">label</span>
+                            {% else %}
+                                <span class="material-symbols-outlined">account_balance_wallet</span>
+                            {% endif %}
+                            {{ item.meta.nome }}
+                        </h3>
+                        <div class="meta-periodo">
+                            <span class="material-symbols-outlined">calendar_today</span>
+                            {{ item.meta.periodo|capitalize }} - 
+                            {% if item.meta.periodo == 'mensal' %}
+                                {{ item.progresso.data_inicio.strftime('%B/%Y') }}
+                            {% elif item.meta.periodo == 'trimestral' %}
+                                {{ item.progresso.data_inicio.strftime('%b') }} a {{ item.progresso.data_fim.strftime('%b/%Y') }}
+                            {% elif item.meta.periodo == 'anual' %}
+                                {{ item.progresso.data_inicio.year }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="meta-actions">
+                        <button class="btn-icon btn-pause" 
+                                onclick="toggleMeta({{ item.meta.id }})"
+                                title="{{ 'Reativar' if not item.meta.ativa else 'Pausar' }}">
+                            <span class="material-symbols-outlined">
+                                {{ 'play_arrow' if not item.meta.ativa else 'pause' }}
+                            </span>
+                        </button>
+                        <button class="btn-icon btn-edit" 
+                                onclick="editarMeta({{ item.meta.id }}, {{ item.meta.valor_limite }}, {{ item.meta.alertar_percentual }}, {{ 'true' if item.meta.renovar_automaticamente else 'false' }}, {{ 'true' if item.meta.incluir_cartao else 'false' }})"
+                                title="Editar">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        <button class="btn-icon btn-delete" 
+                                onclick="confirmarExclusaoMeta({{ item.meta.id }}, '{{ item.meta.nome }}')"
+                                title="Excluir">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Barra de Progresso -->
+                <div class="progresso-container">
+                    <div class="progresso-header">
+                        <span class="progresso-valor">
+                            R$ {{ item.progresso.valor_gasto|moeda }} / R$ {{ item.progresso.valor_limite|moeda }}
+                        </span>
+                        <span class="progresso-percentual {{ item.progresso.cor }}">
+                            {{ item.progresso.percentual|round|int }}%
+                        </span>
+                    </div>
+                    <div class="progresso-bar">
+                        <div class="progresso-fill {{ item.progresso.cor }}" 
+                             style="width: {{ [item.progresso.percentual, 100]|min }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Detalhes da Meta -->
+                <div class="meta-detalhes">
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Status:</span>
+                        <span class="detalhe-valor">
+                            {% if not item.meta.ativa %}
+                                <span style="color: #6c757d;">Pausada</span>
+                            {% elif item.progresso.status == 'ok' %}
+                                <span style="color: #28a745;">Dentro do Limite</span>
+                            {% elif item.progresso.status == 'alerta' %}
+                                <span style="color: #ffc107;">Atenção</span>
+                            {% else %}
+                                <span style="color: #dc3545;">Excedido</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="detalhe-item">
+                        <span class="detalhe-label">Alertar em:</span>
+                        <span class="detalhe-valor">{{ item.meta.alertar_percentual }}%</span>
+                    </div>
+                    {% if item.meta.incluir_cartao %}
+                        <div class="detalhe-item">
+                            <span class="detalhe-label">Inclui cartão:</span>
+                            <span class="detalhe-valor">
+                                <span class="material-symbols-outlined" style="font-size: 16px; color: #28a745;">check</span>
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <span class="material-symbols-outlined">savings</span>
+        <p>Nenhuma meta cadastrada ainda.</p>
+        <p>Comece criando sua primeira meta orçamentária!</p>
+    </div>
+{% endif %}
+
+<!-- Modal de Nova Meta -->
+<div id="modalNovaMeta" class="meta-modal">
+    <div class="meta-modal-content">
+        <div class="meta-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">add_circle</span>
+                Nova Meta Orçamentária
+            </h3>
+            <span class="meta-modal-close" onclick="fecharModalMeta()">&times;</span>
+        </div>
+        
+        <form id="formNovaMeta" action="{{ url_for('metas.criar_meta') }}" method="POST">
+            <div class="meta-modal-body">
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <div class="wizard-step active" data-step="1">
+                        <div class="wizard-step-number">1</div>
+                        <span>Tipo</span>
+                    </div>
+                    <div class="wizard-step" data-step="2">
+                        <div class="wizard-step-number">2</div>
+                        <span>Detalhes</span>
+                    </div>
+                    <div class="wizard-step" data-step="3">
+                        <div class="wizard-step-number">3</div>
+                        <span>Configurações</span>
+                    </div>
+                </div>
+                
+                <!-- Step 1: Tipo de Meta -->
+                <div id="step1" class="form-step">
+                    <h4 style="margin-bottom: 20px;">Escolha o tipo de meta:</h4>
+                    <div class="tipo-selector">
+                        <div class="tipo-option">
+                            <input type="radio" id="tipo_categoria" name="tipo" value="categoria">
+                            <label for="tipo_categoria">
+                                <span class="material-symbols-outlined">category</span>
+                                <span>Por Categoria</span>
+                            </label>
+                        </div>
+                        <div class="tipo-option">
+                            <input type="radio" id="tipo_tag" name="tipo" value="tag">
+                            <label for="tipo_tag">
+                                <span class="material-symbols-outlined">label</span>
+                                <span>Por Tag</span>
+                            </label>
+                        </div>
+                        <div class="tipo-option">
+                            <input type="radio" id="tipo_global" name="tipo" value="global">
+                            <label for="tipo_global">
+                                <span class="material-symbols-outlined">account_balance_wallet</span>
+                                <span>Global</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Detalhes -->
+                <div id="step2" class="form-step" style="display: none;">
+                    <div class="form-group" id="campo-categoria" style="display: none;">
+                        <label for="categoria_id">Categoria</label>
+                        <select id="categoria_id" name="categoria_id">
+                            <option value="">Selecione...</option>
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria.id }}">
+                                    {{ categoria.nome }} ({{ categoria.tipo }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="campo-tag" style="display: none;">
+                        <label for="tag">Tag</label>
+                        <input type="text" id="tag" name="tag" list="tags-list" placeholder="Digite ou selecione uma tag">
+                        <datalist id="tags-list">
+                            {% for tag in tags_disponiveis %}
+                                <option value="{{ tag }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="valor_limite">Valor Limite (R$)</label>
+                        <input type="number" id="valor_limite" name="valor_limite" step="0.01" placeholder="0,00" required>
+                    </div>
+                    
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="periodo">Período</label>
+                            <select id="periodo" name="periodo" required>
+                                <option value="mensal">Mensal</option>
+                                <option value="trimestral">Trimestral</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="flex: 1;">
+                            <label for="data_inicio">Iniciar em</label>
+                            <input type="date" id="data_inicio" name="data_inicio" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Configurações -->
+                <div id="step3" class="form-step" style="display: none;">
+                    <div class="config-group">
+                        <h4>Configurações Extras</h4>
+                        
+                        <div class="form-group">
+                            <label for="alertar_percentual">Alertar quando atingir (%)</label>
+                            <input type="number" id="alertar_percentual" name="alertar_percentual" 
+                                   min="50" max="100" value="80" step="5">
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="renovar_automaticamente" name="renovar_automaticamente" checked>
+                            <label for="renovar_automaticamente">Renovar automaticamente</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="incluir_cartao" name="incluir_cartao" checked>
+                            <label for="incluir_cartao">Incluir despesas do cartão de crédito</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="meta-modal-actions">
+                <button type="button" class="btn btn-secondary" id="btnVoltar" onclick="voltarStep()" style="display: none;">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    Voltar
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="fecharModalMeta()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnProximo" onclick="proximoStep()">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                    Próximo
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSalvar" style="display: none;">
+                    <span class="material-symbols-outlined">save</span>
+                    Criar Meta
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Edição -->
+<div id="modalEdicaoMeta" class="meta-modal">
+    <div class="meta-modal-content">
+        <div class="meta-modal-header">
+            <h3>
+                <span class="material-symbols-outlined">edit</span>
+                Editar Meta
+            </h3>
+            <span class="meta-modal-close" onclick="fecharModalEdicao()">&times;</span>
+        </div>
+        <form id="formEdicaoMeta" method="POST">
+            <input type="hidden" id="edit_meta_id" name="meta_id">
+            
+            <div class="meta-modal-body">
+                <div class="form-group">
+                    <label for="edit_valor_limite">Valor Limite (R$)</label>
+                    <input type="number" id="edit_valor_limite" name="valor_limite" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_alertar_percentual">Alertar quando atingir (%)</label>
+                    <input type="number" id="edit_alertar_percentual" name="alertar_percentual" 
+                           min="50" max="100" step="5">
+                </div>
+                
+                <div class="config-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="edit_renovar_automaticamente" name="renovar_automaticamente">
+                        <label for="edit_renovar_automaticamente">Renovar automaticamente</label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="edit_incluir_cartao" name="incluir_cartao">
+                        <label for="edit_incluir_cartao">Incluir despesas do cartão de crédito</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="meta-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEdicao()">
+                    <span class="material-symbols-outlined">close</span>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/metas.js') }}"></script>
+{% endblock %}

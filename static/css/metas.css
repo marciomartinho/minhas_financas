@@ -1,0 +1,812 @@
+/* static/css/metas.css */
+
+/* --- Alertas (reutilizando estilo) --- */
+.alert {
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    animation: slideIn 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* --- Header das Metas --- */
+.metas-header {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.metas-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.metas-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.metas-header h1 .material-symbols-outlined {
+    color: #28a745;
+}
+
+.btn-nova-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-nova-meta:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* --- Cards de Estatísticas --- */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border-left: 4px solid #28a745;
+}
+
+.stat-card .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-card .stat-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* --- Tabs de Filtro --- */
+.metas-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    background-color: #ffffff;
+    padding: 5px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tab-button:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+.tab-button.active {
+    background-color: #28a745;
+    color: white;
+}
+
+/* --- Container de Metas --- */
+.metas-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* --- Card de Meta --- */
+.meta-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.meta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+.meta-card.pausada {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+}
+
+.meta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.meta-info h3 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-info h3 .material-symbols-outlined {
+    font-size: 20px;
+    color: #6c757d;
+}
+
+.meta-periodo {
+    font-size: 13px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.meta-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* --- Barra de Progresso --- */
+.progresso-container {
+    margin-bottom: 15px;
+}
+
+.progresso-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progresso-valor {
+    font-size: 14px;
+    color: #495057;
+}
+
+.progresso-percentual {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.progresso-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progresso-fill {
+    height: 100%;
+    transition: width 0.5s ease, background-color 0.3s ease;
+    border-radius: 10px;
+    position: relative;
+}
+
+.progresso-fill.success {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+}
+
+.progresso-fill.warning {
+    background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
+}
+
+.progresso-fill.danger {
+    background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+}
+
+/* Animação de pulso para metas excedidas */
+.progresso-fill.danger {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+/* --- Detalhes da Meta --- */
+.meta-detalhes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.detalhe-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.detalhe-label {
+    color: #6c757d;
+}
+
+.detalhe-valor {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* --- Botões de Ação --- */
+.btn-icon {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.btn-pause {
+    color: #ffc107;
+}
+
+.btn-pause:hover {
+    background-color: #ffc107;
+    color: white;
+    border-color: #ffc107;
+}
+
+.btn-edit {
+    color: #007bff;
+}
+
+.btn-edit:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-delete {
+    color: #dc3545;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+/* --- Modal de Nova Meta --- */
+.meta-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    animation: fadeIn 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.meta-modal-content {
+    background-color: #ffffff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.4s ease;
+}
+
+.meta-modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    padding: 25px 30px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.meta-modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.meta-modal-close {
+    font-size: 32px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+    padding: 0 5px;
+}
+
+.meta-modal-close:hover {
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+.meta-modal-body {
+    padding: 30px;
+}
+
+/* --- Wizard Steps --- */
+.wizard-steps {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    gap: 30px;
+}
+
+.wizard-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #6c757d;
+    font-size: 14px;
+    position: relative;
+}
+
+.wizard-step.active {
+    color: #28a745;
+}
+
+.wizard-step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.wizard-step.active .wizard-step-number {
+    background-color: #28a745;
+    color: white;
+}
+
+.wizard-step.completed .wizard-step-number {
+    background-color: #28a745;
+    color: white;
+}
+
+/* --- Form Groups --- */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    background-color: #fafafa;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #28a745;
+    background-color: #ffffff;
+}
+
+/* --- Radio Buttons Customizados --- */
+.tipo-selector {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.tipo-option {
+    flex: 1;
+    position: relative;
+}
+
+.tipo-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.tipo-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tipo-option input[type="radio"]:checked + label {
+    border-color: #28a745;
+    background-color: #28a74510;
+}
+
+.tipo-option label .material-symbols-outlined {
+    font-size: 32px;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.tipo-option input[type="radio"]:checked + label .material-symbols-outlined {
+    color: #28a745;
+}
+
+/* --- Configurações Extras --- */
+.config-group {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.config-group h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* --- Modal Actions --- */
+.meta-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 30px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 16px 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* --- Estado Vazio --- */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state .material-symbols-outlined {
+    font-size: 80px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state p {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+/* --- Botões --- */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: #28a745;
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-primary:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.btn-secondary {
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #dee2e6;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* --- Animações --- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+    .metas-header-top {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .metas-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .tipo-selector {
+        flex-direction: column;
+    }
+    
+    .wizard-steps {
+        font-size: 12px;
+        gap: 20px;
+    }
+    
+    .meta-modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+}
+
+/* --- Seletor de Período --- */
+.periodo-selector-metas {
+    background-color: #ffffff;
+    padding: 20px 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.periodo-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.periodo-info h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.periodo-info h2 .material-symbols-outlined {
+    font-size: 24px;
+    color: #6c757d;
+}
+
+.periodo-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.form-periodo-metas {
+    display: flex;
+    gap: 10px;
+}
+
+.form-periodo-metas select {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-periodo-metas select:hover {
+    border-color: #28a745;
+}
+
+.form-periodo-metas select:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.btn-hoje {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-hoje:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Indicador de período futuro */
+.periodo-futuro-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background-color: #17a2b8;
+    color: white;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+/* Ajuste no header das metas */
+.metas-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.metas-title-section {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .periodo-selector-metas {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .periodo-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-periodo-metas {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .form-periodo-metas select {
+        min-width: 120px;
+    }
+}
