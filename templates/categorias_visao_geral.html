@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Visão Geral das Categorias - Minhas Finanças{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/categorias-visao.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Mensagens Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Seletor de Categoria e Período -->
+<div class="categoria-selector">
+    <div class="categoria-selector-header">
+        <h1>
+            <span class="material-symbols-outlined">category</span>
+            Visão Geral das Categorias
+        </h1>
+    </div>
+    
+    <div class="selectors-container">
+        <form method="GET" action="{{ url_for('categorias_visao.visao_geral_categorias') }}" class="form-categoria-filter" id="formFiltroCategorias">
+            <select name="categoria_id" class="categoria-select">
+                <option value="">Todas as Categorias</option>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" 
+                            {% if categoria.id == categoria_id %}selected{% endif %}
+                            style="color: {{ categoria.cor }};">
+                        {{ categoria.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="subcategoria_id" class="subcategoria-select" {% if not subcategorias %}disabled{% endif %}>
+                <option value="">Todas as Subcategorias</option>
+                {% for subcategoria in subcategorias %}
+                    <option value="{{ subcategoria.id }}" {% if subcategoria.id == subcategoria_id %}selected{% endif %}>
+                        {{ subcategoria.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="tipo" class="tipo-select">
+                <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos</option>
+                <option value="receitas" {% if tipo_filtro == 'receitas' %}selected{% endif %}>Receitas</option>
+                <option value="despesas" {% if tipo_filtro == 'despesas' %}selected{% endif %}>Despesas</option>
+            </select>
+            
+            <select name="mes">
+                {% for mes_item in meses %}
+                    <option value="{{ mes_item.numero }}" {% if mes_item.numero == mes_selecionado %}selected{% endif %}>
+                        {{ mes_item.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="ano">
+                {% for ano in range(2020, 2030) %}
+                    <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if categoria_selecionada %}
+    <!-- Informações da Categoria Selecionada -->
+    <div class="categoria-info">
+        <div class="categoria-display">
+            <span class="categoria-badge-large" style="background-color: {{ categoria_selecionada.cor }};">
+                <span class="material-symbols-outlined">category</span>
+                {{ categoria_selecionada.nome }}
+            </span>
+            {% if subcategoria_selecionada %}
+                <span class="subcategoria-badge">
+                    <span class="material-symbols-outlined">subdirectory_arrow_right</span>
+                    {{ subcategoria_selecionada.nome }}
+                </span>
+            {% endif %}
+        </div>
+        <div class="periodo-info">
+            <span class="material-symbols-outlined">calendar_today</span>
+            {{ periodo_exibido }}
+        </div>
+    </div>
+    
+    <!-- Resumo por Subcategorias (se aplicável) -->
+    {% if resumo_por_tipo and not subcategoria_selecionada %}
+        <div class="resumo-categorias-container">
+            <div class="resumo-categorias-grid">
+                {% for nome, dados in resumo_por_tipo.items() %}
+                    <div class="categoria-card" 
+                         style="border-left-color: {{ categoria_selecionada.cor }};"
+                         onclick="{% if dados.id %}verSubcategoria({{ dados.id }}){% endif %}"
+                         data-nome="{{ nome }}"
+                         data-quantidade="{{ dados.quantidade }}">
+                        <div class="categoria-card-header">
+                            <div class="categoria-card-title">
+                                <span class="material-symbols-outlined">
+                                    {% if dados.id %}subdirectory_arrow_right{% else %}folder_off{% endif %}
+                                </span>
+                                {{ nome }}
+                            </div>
+                            <span class="categoria-card-badge">{{ dados.quantidade }}</span>
+                        </div>
+                        <div class="categoria-card-body">
+                            <div class="categoria-stat">
+                                <span class="categoria-stat-label">Receitas</span>
+                                <span class="categoria-stat-value receita">R$ {{ dados.receitas|moeda }}</span>
+                            </div>
+                            <div class="categoria-stat">
+                                <span class="categoria-stat-label">Despesas</span>
+                                <span class="categoria-stat-value despesa">R$ {{ dados.despesas|moeda }}</span>
+                            </div>
+                            <div class="categoria-stat">
+                                <span class="categoria-stat-label">Total</span>
+                                <span class="categoria-stat-value total">R$ {{ dados.total|moeda }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Tabela de Lançamentos Detalhados -->
+    {% if lancamentos %}
+        <div class="lancamentos-detalhados">
+            <div class="detalhes-header">
+                <h3>
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    Lançamentos Detalhados
+                </h3>
+                <div class="filtro-rapido">
+                    <button class="btn-filtro {% if tipo_filtro == 'todos' %}active{% endif %}" 
+                            data-tipo="todos">Todos</button>
+                    <button class="btn-filtro {% if tipo_filtro == 'receitas' %}active{% endif %}" 
+                            data-tipo="receitas">Receitas</button>
+                    <button class="btn-filtro {% if tipo_filtro == 'despesas' %}active{% endif %}" 
+                            data-tipo="despesas">Despesas</button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="tabela-lancamentos">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Tipo</th>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Subcategoria</th>
+                            <th>Conta/Cartão</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lancamento in lancamentos %}
+                            <tr class="{{ 'row-pago' if lancamento.status == 'pago' else '' }}">
+                                <td class="col-status">
+                                    <span class="status-icon {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}">
+                                        <span class="material-symbols-outlined">
+                                            {{ 'check_circle' if lancamento.status == 'pago' else 'radio_button_unchecked' }}
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="col-tipo">
+                                    {% if lancamento.tipo == 'receita' %}
+                                        <span class="tipo-badge receita">
+                                            <span class="material-symbols-outlined">trending_up</span>
+                                            Receita
+                                        </span>
+                                    {% elif lancamento.tipo == 'cartao_credito' %}
+                                        <span class="tipo-badge cartao">
+                                            <span class="material-symbols-outlined">credit_card</span>
+                                            Cartão
+                                        </span>
+                                    {% else %}
+                                        <span class="tipo-badge despesa">
+                                            <span class="material-symbols-outlined">trending_down</span>
+                                            Despesa
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ lancamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {{ lancamento.descricao }}
+                                    {% if lancamento.tag %}
+                                        <span class="tag-mini">{{ lancamento.tag }}</span>
+                                    {% endif %}
+                                    {% if lancamento.numero_parcela %}
+                                        <span class="badge-parcela">
+                                            {{ lancamento.numero_parcela }}/{{ lancamento.total_parcelas }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lancamento.subcategoria %}
+                                        {{ lancamento.subcategoria.nome }}
+                                    {% else %}
+                                        <span style="color: #999;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lancamento.tipo == 'cartao_credito' %}
+                                        {{ lancamento.cartao.nome }}
+                                    {% else %}
+                                        {{ lancamento.conta.nome }}
+                                    {% endif %}
+                                </td>
+                                <td class="col-valor {{ 'receita' if lancamento.tipo == 'receita' else 'despesa' }}">
+                                    R$ {{ lancamento.valor|moeda }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% elif categoria_selecionada %}
+        <div class="empty-table">
+            <span class="material-symbols-outlined">inbox</span>
+            <p>Nenhum lançamento encontrado para os filtros selecionados</p>
+        </div>
+    {% endif %}
+    
+    <!-- Resumo Executivo -->
+    <div class="resumo-executivo">
+        <h3>Resumo {% if subcategoria_selecionada %}da Subcategoria "{{ subcategoria_selecionada.nome }}"{% else %}da Categoria "{{ categoria_selecionada.nome }}"{% endif %}</h3>
+        <div class="resumo-cards">
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
+                <div>
+                    <span class="resumo-label">Total de Receitas</span>
+                    <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
+                <div>
+                    <span class="resumo-label">Total de Despesas</span>
+                    <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card {{ 'positivo' if (total_receitas - total_despesas) >= 0 else 'negativo' }}">
+                <span class="material-symbols-outlined">
+                    {{ 'account_balance' if (total_receitas - total_despesas) >= 0 else 'error' }}
+                </span>
+                <div>
+                    <span class="resumo-label">Resultado</span>
+                    <span class="resumo-value">R$ {{ (total_receitas - total_despesas)|moeda }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% elif not categoria_selecionada and resumo_por_tipo %}
+    <!-- Resumo Geral de Todas as Categorias -->
+    <div class="resumo-categorias-container">
+        <div class="resumo-categorias-grid">
+            {% for nome, dados in resumo_por_tipo.items() %}
+                <div class="categoria-card" 
+                     style="border-left-color: {{ dados.cor if dados.cor else '#6c757d' }};"
+                     onclick="verCategoria({{ dados.id }})"
+                     data-nome="{{ nome }}"
+                     data-quantidade="{{ dados.quantidade }}">
+                    <div class="categoria-card-header">
+                        <div class="categoria-card-title" style="color: {{ dados.cor if dados.cor else '#2c3e50' }};">
+                            <span class="material-symbols-outlined">folder</span>
+                            {{ nome }}
+                        </div>
+                        <span class="categoria-card-badge">{{ dados.quantidade }}</span>
+                    </div>
+                    <div class="categoria-card-body">
+                        <div class="categoria-stat">
+                            <span class="categoria-stat-label">Receitas</span>
+                            <span class="categoria-stat-value receita">R$ {{ dados.receitas|moeda }}</span>
+                        </div>
+                        <div class="categoria-stat">
+                            <span class="categoria-stat-label">Despesas</span>
+                            <span class="categoria-stat-value despesa">R$ {{ dados.despesas|moeda }}</span>
+                        </div>
+                        <div class="categoria-stat">
+                            <span class="categoria-stat-label">Total</span>
+                            <span class="categoria-stat-value total">R$ {{ dados.total|moeda }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Resumo Executivo Geral -->
+    <div class="resumo-executivo">
+        <h3>Resumo Geral - {{ periodo_exibido }}</h3>
+        <div class="resumo-cards">
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
+                <div>
+                    <span class="resumo-label">Total de Receitas</span>
+                    <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card">
+                <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
+                <div>
+                    <span class="resumo-label">Total de Despesas</span>
+                    <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
+                </div>
+            </div>
+            <div class="resumo-card {{ 'positivo' if (total_receitas - total_despesas) >= 0 else 'negativo' }}">
+                <span class="material-symbols-outlined">
+                    {{ 'account_balance' if (total_receitas - total_despesas) >= 0 else 'error' }}
+                </span>
+                <div>
+                    <span class="resumo-label">Resultado</span>
+                    <span class="resumo-value">R$ {{ (total_receitas - total_despesas)|moeda }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% else %}
+    <!-- Estado Vazio -->
+    <div class="empty-state">
+        <span class="material-symbols-outlined">category</span>
+        <p>Nenhum lançamento encontrado para o período selecionado</p>
+        <p>
+            {% if not categorias %}
+                Nenhuma categoria cadastrada no sistema ainda.
+            {% else %}
+                Experimente selecionar um período diferente ou verificar se existem lançamentos cadastrados.
+            {% endif %}
+        </p>
+    </div>
+{% endif %}
+
+<!-- Gráfico de Pizza (futuro) -->
+{% if resumo_por_tipo %}
+    <div class="grafico-container" style="display: none;">
+        <h3>Distribuição por {{ 'Subcategoria' if categoria_selecionada and not subcategoria_selecionada else 'Categoria' }}</h3>
+        <div id="grafico-categorias"></div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/categorias-visao.js') }}"></script>
+{% endblock %}
