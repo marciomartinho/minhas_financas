@@ -1,7 +1,7 @@
 # app/routes/main_routes.py
 
 from flask import Blueprint, render_template, request, Response, flash, redirect, url_for, current_app
-from app.models import db, Conta, Lancamento, Cartao, Categoria
+from app.models import db, Conta, Lancamento, Cartao, Categoria, Subcategoria
 from datetime import datetime, date, timedelta
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
@@ -33,6 +33,7 @@ def home():
     
     # IMPORTANTE: Buscar IDs das contas correntes para filtrar
     ids_contas_corrente = [conta.id for conta in contas_corrente]
+    ids_contas_investimento = [conta.id for conta in contas_investimento]
     
     # Buscar lançamentos do mês - APENAS DE CONTAS CORRENTES
     # Para receitas: apenas tipo = 'receita' E conta_id em contas correntes
@@ -125,6 +126,166 @@ def home():
     # Calcular total das faturas de cartão não pagas
     total_faturas_pendentes = sum(lancamento.valor for lancamento in despesas if lancamento.tipo == 'fatura_cartao' and lancamento.status == 'pendente')
     
+    # ========== ANÁLISE POR CATEGORIAS ==========
+    
+    # Estrutura para armazenar análise
+    analise_categorias = {
+        'despesas': [],
+        'investimentos': [],
+        'receitas': [],
+        'total_despesas': 0,
+        'total_investimentos': 0,
+        'total_receitas': 0,
+        'economia_mes': 0
+    }
+    
+    # 1. ANÁLISE DE DESPESAS (excluindo investimentos)
+    # Buscar apenas despesas normais (NÃO incluir cartão_credito aqui)
+    despesas_normais = Lancamento.query.filter(
+        Lancamento.tipo == 'despesa',  # Apenas despesas, sem cartão_credito
+        Lancamento.conta_id.in_(ids_contas_corrente),
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia,
+        Lancamento.status != 'cancelado'
+    ).all()
+    
+    # Agrupar por categoria e subcategoria
+    despesas_por_categoria = defaultdict(lambda: {
+        'nome': '',
+        'total': 0,
+        'subcategorias': defaultdict(float),
+        'cor': '#6c757d',
+        'icone': 'category'
+    })
+    
+    # Adicionar despesas normais
+    for despesa in despesas_normais:
+        if despesa.categoria:
+            cat_id = despesa.categoria_id
+            despesas_por_categoria[cat_id]['nome'] = despesa.categoria.nome
+            despesas_por_categoria[cat_id]['cor'] = despesa.categoria.cor or '#6c757d'
+            despesas_por_categoria[cat_id]['icone'] = despesa.categoria.icone or 'category'
+            despesas_por_categoria[cat_id]['total'] += float(despesa.valor)
+            
+            if despesa.subcategoria:
+                despesas_por_categoria[cat_id]['subcategorias'][despesa.subcategoria.nome] += float(despesa.valor)
+            else:
+                despesas_por_categoria[cat_id]['subcategorias']['Sem subcategoria'] += float(despesa.valor)
+    
+    # Adicionar APENAS as despesas do cartão que fazem parte das faturas deste mês
+    for fatura in faturas_cartao:
+        # Apenas processar despesas de faturas não canceladas
+        if hasattr(fatura, 'despesas_cartao'):
+            for despesa_cartao in fatura.despesas_cartao:
+                if despesa_cartao.categoria:
+                    cat_id = despesa_cartao.categoria_id
+                    despesas_por_categoria[cat_id]['nome'] = despesa_cartao.categoria.nome
+                    despesas_por_categoria[cat_id]['cor'] = despesa_cartao.categoria.cor or '#6c757d'
+                    despesas_por_categoria[cat_id]['icone'] = despesa_cartao.categoria.icone or 'category'
+                    despesas_por_categoria[cat_id]['total'] += float(despesa_cartao.valor)
+                    
+                    if despesa_cartao.subcategoria:
+                        despesas_por_categoria[cat_id]['subcategorias'][despesa_cartao.subcategoria.nome] += float(despesa_cartao.valor)
+                    else:
+                        despesas_por_categoria[cat_id]['subcategorias']['Sem subcategoria'] += float(despesa_cartao.valor)
+    
+    # Converter para lista e ordenar
+    for cat_id, dados in despesas_por_categoria.items():
+        subcategorias_lista = []
+        for sub_nome, sub_valor in dados['subcategorias'].items():
+            subcategorias_lista.append({
+                'nome': sub_nome,
+                'valor': sub_valor
+            })
+        subcategorias_lista.sort(key=lambda x: x['valor'], reverse=True)
+        
+        analise_categorias['despesas'].append({
+            'id': cat_id,
+            'nome': dados['nome'],
+            'cor': dados['cor'],
+            'icone': dados['icone'],
+            'total': dados['total'],
+            'subcategorias': subcategorias_lista
+        })
+    
+    analise_categorias['despesas'].sort(key=lambda x: x['total'], reverse=True)
+    analise_categorias['total_despesas'] = sum(cat['total'] for cat in analise_categorias['despesas'])
+    
+    # 2. ANÁLISE DE INVESTIMENTOS
+    # Buscar lançamentos de investimento
+    lancamentos_investimento = Lancamento.query.filter(
+        Lancamento.tipo == 'transferencia',
+        Lancamento.conta_destino_id.in_(ids_contas_investimento),
+        Lancamento.data_vencimento >= primeiro_dia,
+        Lancamento.data_vencimento <= ultimo_dia,
+        Lancamento.status != 'cancelado'
+    ).all()
+    
+    investimentos_por_conta = defaultdict(float)
+    for lanc in lancamentos_investimento:
+        if lanc.conta_destino:
+            investimentos_por_conta[lanc.conta_destino.nome] += float(lanc.valor)
+    
+    for conta_nome, valor in investimentos_por_conta.items():
+        analise_categorias['investimentos'].append({
+            'nome': conta_nome,
+            'valor': valor
+        })
+    
+    analise_categorias['investimentos'].sort(key=lambda x: x['valor'], reverse=True)
+    analise_categorias['total_investimentos'] = sum(inv['valor'] for inv in analise_categorias['investimentos'])
+    
+    # 3. ANÁLISE DE RECEITAS
+    receitas_por_categoria = defaultdict(lambda: {
+        'nome': '',
+        'total': 0,
+        'subcategorias': defaultdict(float),
+        'cor': '#28a745',
+        'icone': 'attach_money'
+    })
+    
+    for receita in receitas:
+        if receita.categoria:
+            cat_id = receita.categoria_id
+            receitas_por_categoria[cat_id]['nome'] = receita.categoria.nome
+            receitas_por_categoria[cat_id]['cor'] = receita.categoria.cor or '#28a745'
+            receitas_por_categoria[cat_id]['icone'] = receita.categoria.icone or 'attach_money'
+            receitas_por_categoria[cat_id]['total'] += float(receita.valor)
+            
+            if receita.subcategoria:
+                receitas_por_categoria[cat_id]['subcategorias'][receita.subcategoria.nome] += float(receita.valor)
+            else:
+                receitas_por_categoria[cat_id]['subcategorias']['Sem subcategoria'] += float(receita.valor)
+    
+    # Converter para lista e ordenar
+    for cat_id, dados in receitas_por_categoria.items():
+        subcategorias_lista = []
+        for sub_nome, sub_valor in dados['subcategorias'].items():
+            subcategorias_lista.append({
+                'nome': sub_nome,
+                'valor': sub_valor
+            })
+        subcategorias_lista.sort(key=lambda x: x['valor'], reverse=True)
+        
+        analise_categorias['receitas'].append({
+            'id': cat_id,
+            'nome': dados['nome'],
+            'cor': dados['cor'],
+            'icone': dados['icone'],
+            'total': dados['total'],
+            'subcategorias': subcategorias_lista
+        })
+    
+    analise_categorias['receitas'].sort(key=lambda x: x['total'], reverse=True)
+    analise_categorias['total_receitas'] = sum(cat['total'] for cat in analise_categorias['receitas'])
+    
+    # 4. CALCULAR ECONOMIA DO MÊS
+    analise_categorias['economia_mes'] = (
+        analise_categorias['total_receitas'] - 
+        analise_categorias['total_despesas'] - 
+        analise_categorias['total_investimentos']
+    )
+    
     # Criar lista de meses para o seletor
     meses = [
         {'numero': 1, 'nome': 'Janeiro'},
@@ -153,6 +314,7 @@ def home():
                          total_receitas_pendentes=total_receitas_pendentes,
                          total_despesas_pendentes=total_despesas_pendentes,
                          total_faturas_pendentes=total_faturas_pendentes,
+                         analise_categorias=analise_categorias,
                          mes_selecionado=mes,
                          ano_selecionado=ano,
                          meses=meses,

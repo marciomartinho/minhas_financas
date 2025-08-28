@@ -1,0 +1,381 @@
+/* static/css/analise-categorias.css */
+
+/* Container Principal da Análise */
+.analise-categorias-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-top: 30px;
+}
+
+.analise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.analise-header h3 {
+    margin: 0;
+    font-size: 22px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.analise-header .material-symbols-outlined {
+    font-size: 26px;
+    color: #6c757d;
+}
+
+/* Tabela de Análise */
+.tabela-analise {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.tabela-analise thead tr {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.tabela-analise th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tabela-analise th.col-valor,
+.tabela-analise th.col-percentual {
+    text-align: right;
+}
+
+.tabela-analise tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.tabela-analise tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Linha de Categoria */
+.row-categoria {
+    font-weight: 600;
+    background-color: #ffffff;
+}
+
+.row-categoria:hover {
+    background-color: #f8f9fa !important;
+}
+
+.row-categoria td {
+    padding: 12px;
+}
+
+/* Linha de Subcategoria */
+.row-subcategoria {
+    background-color: #fafbfc;
+    font-size: 13px;
+    display: none;
+}
+
+.row-subcategoria.show {
+    display: table-row;
+    animation: slideDown 0.3s ease;
+}
+
+.row-subcategoria td {
+    padding: 10px 12px;
+    color: #6c757d;
+}
+
+.row-subcategoria td:first-child {
+    padding-left: 50px;
+}
+
+/* Linha de Total (Despesas, Investimentos, Receitas) */
+.row-total-secao {
+    background-color: #e9ecef;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.row-total-secao td {
+    padding: 14px 12px;
+    color: #2c3e50;
+}
+
+/* Linha de Resultado Final */
+.row-resultado-final {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 700;
+    font-size: 16px;
+    border-top: 2px solid #dee2e6;
+}
+
+.row-resultado-final td {
+    padding: 16px 12px;
+}
+
+.row-resultado-final.positivo {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+}
+
+.row-resultado-final.positivo td {
+    color: #155724;
+}
+
+.row-resultado-final.negativo {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.row-resultado-final.negativo td {
+    color: #721c24;
+}
+
+/* Botão de Expandir/Colapsar */
+.btn-toggle-categoria {
+    background: none;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-toggle-categoria:hover {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-toggle-categoria .material-symbols-outlined {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.btn-toggle-categoria.expanded .material-symbols-outlined {
+    transform: rotate(90deg);
+}
+
+/* Categoria Info */
+.categoria-info {
+    display: flex;
+    align-items: center;
+}
+
+.categoria-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    opacity: 0.8;
+}
+
+.categoria-icon .material-symbols-outlined {
+    font-size: 16px;
+    color: white;
+}
+
+.categoria-nome {
+    font-weight: 600;
+}
+
+/* Colunas de Valores */
+.col-valor {
+    text-align: right;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.col-percentual {
+    text-align: right;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Barras de Progresso */
+.percentual-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.percentual-value {
+    font-weight: 600;
+    min-width: 45px;
+    text-align: right;
+}
+
+.percentual-visual {
+    width: 60px;
+    height: 6px;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.percentual-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.percentual-fill.despesa {
+    background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+}
+
+.percentual-fill.receita {
+    background: linear-gradient(90deg, #28a745 0%, #218838 100%);
+}
+
+.percentual-fill.investimento {
+    background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+}
+
+/* Valores Especiais */
+.valor-despesa {
+    color: #dc3545;
+}
+
+.valor-receita {
+    color: #28a745;
+}
+
+.valor-investimento {
+    color: #007bff;
+}
+
+.valor-neutro {
+    color: #6c757d;
+}
+
+/* Indicadores de Estado */
+.sem-dados {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Badges */
+.badge-secao {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+.badge-despesa {
+    background-color: #fee;
+    color: #dc3545;
+}
+
+.badge-receita {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-investimento {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+/* Animações */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .analise-categorias-container {
+        padding: 20px;
+    }
+    
+    .tabela-analise {
+        font-size: 12px;
+    }
+    
+    .tabela-analise th,
+    .tabela-analise td {
+        padding: 8px 6px;
+    }
+    
+    .row-subcategoria td:first-child {
+        padding-left: 30px;
+    }
+    
+    .percentual-visual {
+        width: 40px;
+    }
+    
+    .categoria-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .categoria-icon .material-symbols-outlined {
+        font-size: 14px;
+    }
+    
+    /* Esconder coluna de percentual em telas pequenas */
+    .col-percentual {
+        display: none;
+    }
+    
+    th.col-percentual {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .analise-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .tabela-analise {
+        font-size: 11px;
+    }
+    
+    .percentual-bar {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+    
+    .percentual-visual {
+        display: none;
+    }
+}

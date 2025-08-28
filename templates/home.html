@@ -4,10 +4,10 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analise-categorias.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Mensagens Flash -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -18,7 +18,6 @@
     {% endif %}
 {% endwith %}
 
-<!-- Seletor de Período -->
 <div class="periodo-selector">
     <h1>Visão Geral Financeira</h1>
     <div class="periodo-controls">
@@ -43,10 +42,8 @@
     </div>
 </div>
 
-<!-- Cards de Saldos -->
 <div class="cards-container">
     <div class="cards-row-unified">
-        <!-- Cards de Contas Correntes -->
         {% for conta in contas_corrente %}
             <div class="card-conta">
                 <div class="card-header">
@@ -63,7 +60,6 @@
             </div>
         {% endfor %}
         
-        <!-- Card Total Corrente -->
         <div class="card-total card-corrente">
             <div class="card-header">
                 <span class="material-symbols-outlined">account_balance_wallet</span>
@@ -72,7 +68,6 @@
             <div class="card-value">R$ {{ total_corrente|moeda }}</div>
         </div>
         
-        <!-- Card Total Investimento -->
         {% if total_investimento > 0 %}
             <div class="card-total card-investimento">
                 <div class="card-header">
@@ -85,9 +80,302 @@
     </div>
 </div>
 
-<!-- Tabelas de Receitas e Despesas -->
+<div class="resumo-executivo">
+    <h3>Resumo do Mês</h3>
+    <div class="resumo-cards">
+        <div class="resumo-card">
+            <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
+            <div>
+                <span class="resumo-label">Total de Receitas</span>
+                <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
+            </div>
+        </div>
+        <div class="resumo-card">
+            <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
+            <div>
+                <span class="resumo-label">Total de Despesas</span>
+                <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
+            </div>
+        </div>
+        <div class="resumo-card {{ 'positivo' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'negativo' }}">
+            <span class="material-symbols-outlined">
+                {{ 'account_balance' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'error' }}
+            </span>
+            <div>
+                <span class="resumo-label">Resultado do Mês</span>
+                <span class="resumo-value">R$ {{ (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes)|moeda }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="analise-categorias-container" style="margin-bottom: 20px;">
+    <div class="analise-header">
+        <h3>
+            <span class="material-symbols-outlined">analytics</span>
+            Análise Detalhada por Categoria
+        </h3>
+        <div class="analise-actions">
+            <button type="button" class="btn btn-sm" id="btn-expandir-todas" style="font-size: 12px; padding: 6px 12px;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                Expandir Todas
+            </button>
+            <button type="button" class="btn btn-sm" id="btn-colapsar-todas" style="font-size: 12px; padding: 6px 12px;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">expand_less</span>
+                Colapsar Todas
+            </button>
+        </div>
+    </div>
+    
+    <table class="tabela-analise">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="col-valor">Valor</th>
+                <th class="col-percentual">%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if analise_categorias.despesas %}
+                {% for categoria in analise_categorias.despesas %}
+                <tr class="row-categoria">
+                    <td>
+                        <div class="categoria-info">
+                            {% if categoria.subcategorias %}
+                            <button type="button" 
+                                    class="btn-toggle-categoria" 
+                                    id="btn-toggle-{{ categoria.id }}"
+                                    onclick="toggleSubcategorias('{{ categoria.id }}')">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                            {% else %}
+                            <span style="display: inline-block; width: 30px;"></span>
+                            {% endif %}
+                            <span class="categoria-icon" style="background-color: {{ categoria.cor }};">
+                                <span class="material-symbols-outlined">{{ categoria.icone }}</span>
+                            </span>
+                            <span class="categoria-nome">{{ categoria.nome }}</span>
+                        </div>
+                    </td>
+                    <td class="col-valor valor-despesa">R$ {{ categoria.total|moeda }}</td>
+                    <td class="col-percentual">
+                        <div class="percentual-bar">
+                            <span class="percentual-value percentual-dinamico" 
+                                  data-valor="{{ categoria.total }}">
+                                {% if analise_categorias.total_despesas > 0 %}
+                                    {{ ((categoria.total / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </span>
+                            <div class="percentual-visual">
+                                <div class="percentual-fill despesa" 
+                                     data-width="{% if analise_categorias.total_despesas > 0 %}{{ ((categoria.total / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%{% else %}0%{% endif %}"
+                                     style="width: 0;"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% for subcategoria in categoria.subcategorias %}
+                <tr class="row-subcategoria subcategoria-{{ categoria.id }}">
+                    <td>{{ subcategoria.nome }}</td>
+                    <td class="col-valor">R$ {{ subcategoria.valor|moeda }}</td>
+                    <td class="col-percentual">
+                        <span class="percentual-value">
+                            {% if categoria.total > 0 %}
+                                {{ ((subcategoria.valor / categoria.total) * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                
+                <tr class="row-total-secao">
+                    <td>
+                        <strong>Total de Despesas</strong>
+                        <span class="badge-secao badge-despesa">{{ analise_categorias.despesas|length }} categorias</span>
+                    </td>
+                    <td class="col-valor valor-despesa" id="total-despesas" data-valor="{{ analise_categorias.total_despesas }}">
+                        <strong>R$ {{ analise_categorias.total_despesas|moeda }}</strong>
+                    </td>
+                    <td class="col-percentual">
+                        <strong>
+                            {% if (analise_categorias.total_despesas + analise_categorias.total_investimentos) > 0 %}
+                                {{ ((analise_categorias.total_despesas / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </strong>
+                    </td>
+                </tr>
+            {% endif %}
+            
+            {% if analise_categorias.investimentos %}
+                {% for investimento in analise_categorias.investimentos %}
+                <tr class="row-categoria">
+                    <td>
+                        <div class="categoria-info">
+                            <span style="display: inline-block; width: 30px;"></span>
+                            <span class="categoria-icon" style="background-color: #007bff;">
+                                <span class="material-symbols-outlined">savings</span>
+                            </span>
+                            <span class="categoria-nome">{{ investimento.nome }}</span>
+                        </div>
+                    </td>
+                    <td class="col-valor valor-investimento">R$ {{ investimento.valor|moeda }}</td>
+                    <td class="col-percentual">
+                        <div class="percentual-bar">
+                            <span class="percentual-value">
+                                {% if (analise_categorias.total_despesas + analise_categorias.total_investimentos) > 0 %}
+                                    {{ ((investimento.valor / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </span>
+                            <div class="percentual-visual">
+                                <div class="percentual-fill investimento" 
+                                     data-width="{% if (analise_categorias.total_despesas + analise_categorias.total_investimentos) > 0 %}{{ ((investimento.valor / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%{% else %}0%{% endif %}"
+                                     style="width: 0;"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                <tr class="row-total-secao">
+                    <td>
+                        <strong>Total de Investimentos</strong>
+                        <span class="badge-secao badge-investimento">{{ analise_categorias.investimentos|length }} contas</span>
+                    </td>
+                    <td class="col-valor valor-investimento" id="total-investimentos" data-valor="{{ analise_categorias.total_investimentos }}">
+                        <strong>R$ {{ analise_categorias.total_investimentos|moeda }}</strong>
+                    </td>
+                    <td class="col-percentual">
+                        <strong>
+                            {% if (analise_categorias.total_despesas + analise_categorias.total_investimentos) > 0 %}
+                                {{ ((analise_categorias.total_investimentos / (analise_categorias.total_despesas + analise_categorias.total_investimentos)) * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </strong>
+                    </td>
+                </tr>
+            {% endif %}
+            
+            {% if analise_categorias.receitas %}
+                {% for categoria in analise_categorias.receitas %}
+                <tr class="row-categoria">
+                    <td>
+                        <div class="categoria-info">
+                            {% if categoria.subcategorias %}
+                            <button type="button" 
+                                    class="btn-toggle-categoria" 
+                                    id="btn-toggle-rec-{{ categoria.id }}"
+                                    onclick="toggleSubcategorias('rec-{{ categoria.id }}')">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+                            {% else %}
+                            <span style="display: inline-block; width: 30px;"></span>
+                            {% endif %}
+                            <span class="categoria-icon" style="background-color: {{ categoria.cor }};">
+                                <span class="material-symbols-outlined">{{ categoria.icone }}</span>
+                            </span>
+                            <span class="categoria-nome">{{ categoria.nome }}</span>
+                        </div>
+                    </td>
+                    <td class="col-valor valor-receita">R$ {{ categoria.total|moeda }}</td>
+                    <td class="col-percentual">
+                        <div class="percentual-bar">
+                            <span class="percentual-value">
+                                {% if analise_categorias.total_receitas > 0 %}
+                                    {{ ((categoria.total / analise_categorias.total_receitas) * 100)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </span>
+                            <div class="percentual-visual">
+                                <div class="percentual-fill receita" 
+                                     data-width="{% if analise_categorias.total_receitas > 0 %}{{ ((categoria.total / analise_categorias.total_receitas) * 100)|round(1) }}%{% else %}0%{% endif %}"
+                                     style="width: 0;"></div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% for subcategoria in categoria.subcategorias %}
+                <tr class="row-subcategoria subcategoria-rec-{{ categoria.id }}">
+                    <td>{{ subcategoria.nome }}</td>
+                    <td class="col-valor">R$ {{ subcategoria.valor|moeda }}</td>
+                    <td class="col-percentual">
+                        <span class="percentual-value">
+                            {% if categoria.total > 0 %}
+                                {{ ((subcategoria.valor / categoria.total) * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                
+                <tr class="row-total-secao">
+                    <td>
+                        <strong>Total de Receitas</strong>
+                        <span class="badge-secao badge-receita">{{ analise_categorias.receitas|length }} categorias</span>
+                    </td>
+                    <td class="col-valor valor-receita" id="total-receitas" data-valor="{{ analise_categorias.total_receitas }}">
+                        <strong>R$ {{ analise_categorias.total_receitas|moeda }}</strong>
+                    </td>
+                    <td class="col-percentual">
+                        <strong>100%</strong>
+                    </td>
+                </tr>
+            {% endif %}
+            
+            <tr class="row-resultado-final {{ 'positivo' if analise_categorias.economia_mes >= 0 else 'negativo' }}">
+                <td>
+                    <strong>
+                        {% if analise_categorias.economia_mes >= 0 %}
+                            📈 ECONOMIA DO MÊS
+                        {% else %}
+                            📉 DÉFICIT DO MÊS
+                        {% endif %}
+                    </strong>
+                    <br>
+                    <small style="color: #6c757d; font-weight: normal;">
+                        (Receitas - Despesas - Investimentos)
+                    </small>
+                </td>
+                <td class="col-valor">
+                    <strong style="font-size: 18px;">
+                        R$ {{ analise_categorias.economia_mes|moeda }}
+                    </strong>
+                </td>
+                <td class="col-percentual">
+                    <strong>
+                        {% if analise_categorias.total_receitas > 0 %}
+                            {{ ((analise_categorias.economia_mes / analise_categorias.total_receitas) * 100)|round(1) }}%
+                        {% else %}
+                            --
+                        {% endif %}
+                    </strong>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    {% if not analise_categorias.despesas and not analise_categorias.investimentos and not analise_categorias.receitas %}
+    <div class="sem-dados">
+        <span class="material-symbols-outlined" style="font-size: 48px; color: #dee2e6;">bar_chart</span>
+        <p>Nenhum lançamento registrado neste período para análise.</p>
+    </div>
+    {% endif %}
+</div>
+
 <div class="tabelas-container">
-    <!-- Tabela de Receitas -->
     <div class="tabela-section">
         <div class="tabela-header">
             <h3>
@@ -164,7 +452,6 @@
         {% endif %}
     </div>
     
-    <!-- Tabela de Despesas -->
     <div class="tabela-section">
         <div class="tabela-header">
             <h3>
@@ -199,7 +486,6 @@
                                             </span>
                                         </button>
                                     {% else %}
-                                        <!-- Para faturas de cartão, mostrar status diferente -->
                                         <span class="btn-status {{ 'status-pago' if lancamento.status == 'pago' else 'status-pendente' }}"
                                               title="{{ 'Fatura paga' if lancamento.status == 'pago' else 'Fatura pendente' }}">
                                             <span class="material-symbols-outlined">
@@ -239,7 +525,6 @@
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     {% else %}
-                                        <!-- Para faturas, mostrar link para o extrato -->
                                         <a href="{{ url_for('main.extrato_cartao', mes=mes_selecionado, ano=ano_selecionado, cartao_id=lancamento.cartao_id) }}" 
                                            class="btn-icon-mini btn-view" 
                                            title="Ver extrato completo"
@@ -270,37 +555,6 @@
     </div>
 </div>
 
-<!-- Resumo Executivo -->
-<div class="resumo-executivo">
-    <h3>Resumo do Mês</h3>
-    <div class="resumo-cards">
-        <div class="resumo-card">
-            <span class="material-symbols-outlined" style="color: #28a745;">trending_up</span>
-            <div>
-                <span class="resumo-label">Total de Receitas</span>
-                <span class="resumo-value receita">R$ {{ total_receitas|moeda }}</span>
-            </div>
-        </div>
-        <div class="resumo-card">
-            <span class="material-symbols-outlined" style="color: #dc3545;">trending_down</span>
-            <div>
-                <span class="resumo-label">Total de Despesas</span>
-                <span class="resumo-value despesa">R$ {{ total_despesas|moeda }}</span>
-            </div>
-        </div>
-        <div class="resumo-card {{ 'positivo' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'negativo' }}">
-            <span class="material-symbols-outlined">
-                {{ 'account_balance' if (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes) >= 0 else 'error' }}
-            </span>
-            <div>
-                <span class="resumo-label">Resultado do Mês</span>
-                <span class="resumo-value">R$ {{ (total_corrente + total_receitas_pendentes - total_despesas_pendentes - total_faturas_pendentes)|moeda }}</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Forms ocultos -->
 <form id="formPagamento" method="POST" style="display: none;">
     <input type="hidden" name="from_home" value="true">
     <input type="hidden" name="mes" value="{{ mes_selecionado }}">
@@ -314,7 +568,6 @@
     <input type="hidden" name="ano" value="{{ ano_selecionado }}">
 </form>
 
-<!-- Modal de Exclusão -->
 <div id="modalExclusao" class="home-modal">
     <div class="home-modal-content">
         <div class="home-modal-header modal-header-danger">
@@ -359,7 +612,6 @@
     </div>
 </div>
 
-<!-- Modal de Edição -->
 <div id="modalEdicao" class="home-modal">
     <div class="home-modal-content">
         <div class="home-modal-header">
@@ -403,8 +655,7 @@
                 <div class="form-group">
                     <label for="edit_categoria">Categoria</label>
                     <select id="edit_categoria" name="categoria_id" required>
-                        <!-- Preenchido dinamicamente -->
-                    </select>
+                        </select>
                 </div>
                 
                 <div class="form-group">
@@ -451,4 +702,5 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analise-categorias.js') }}"></script>
 {% endblock %}
